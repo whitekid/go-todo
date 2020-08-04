@@ -1,10 +1,10 @@
 package todo
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/whitekid/go-utils/request"
@@ -24,7 +24,7 @@ func TestTodo(t *testing.T) {
 
 	item := todoItem{
 		Title:   "title",
-		DueDate: time.Now().Truncate(0),
+		DueDate: Today(),
 		Rank:    1,
 	}
 
@@ -78,7 +78,7 @@ func TestTodo(t *testing.T) {
 		updated := created
 		updated.Title = "updated title"
 
-		resp, err := sess.Put("%s/%s", ts.URL, updated.ID).JSON(updated).Do()
+		resp, err := sess.Put("%s/%s", ts.URL, updated.ID).JSON(&updated).Do()
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode)
 
@@ -118,3 +118,66 @@ func TestTodo(t *testing.T) {
 		require.Equal(t, 0, len(items), "item deleted but got %d items", len(items))
 	}
 }
+
+func TestCreate(t *testing.T) {
+	type args struct {
+		item todoItem
+	}
+
+	tests := [...]struct {
+		name     string
+		args     args
+		wantErr  bool
+		wantFail bool
+	}{
+		{"", args{todoItem{Title: "title", DueDate: Today(), Rank: 1}}, false, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts, teardown := newTestServer()
+			defer teardown()
+
+			sess := request.NewSession(nil)
+
+			item := tt.args.item
+
+			resp, err := sess.Post("%s/", ts.URL).JSON(&item).Do()
+			if (err != nil) != tt.wantErr {
+				require.Failf(t, `doSomething() failed`, `error = %v, wantErr = %v`, err, tt.wantErr)
+			}
+
+			if (!resp.Success()) != tt.wantFail {
+				require.Failf(t, "creaet failed", "status = %d", resp.StatusCode)
+			}
+
+			var created todoItem
+			defer resp.Body.Close()
+			require.NoError(t, resp.JSON(&created))
+			require.NotEqual(t, "", created.ID)
+			item.ID = created.ID
+			require.Equal(t, item, created)
+
+			cookies := resp.Cookies()
+			require.NotEqual(t, 0, len(cookies), "need to be set cookie")
+		})
+	}
+}
+
+func TestTodoItem(t *testing.T) {
+	item := todoItem{
+		ID:      "7dc6140d-de8b-42d8-b845-7fe4ddef3c2e",
+		Title:   "title",
+		DueDate: Today(),
+		Rank:    1,
+	}
+
+	buf, err := json.Marshal(&item)
+	require.NoError(t, err)
+	require.NotEqual(t, "", string(buf))
+
+	var revert todoItem
+	require.NoError(t, json.Unmarshal(buf, &revert))
+	require.Equal(t, item, revert, "%s %s", item.DueDate.String(), revert.DueDate.String())
+}
+
+func doSomething() (string, error) { return "something", nil }

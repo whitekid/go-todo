@@ -1,5 +1,6 @@
 package todo
 
+//go:generate swag init -g app.go
 import (
 	"bytes"
 	"context"
@@ -13,6 +14,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
+	"github.com/swaggo/echo-swagger"
+	_ "github.com/whitekid/go-todo/pkg/docs"
 	log "github.com/whitekid/go-utils/logging"
 	"github.com/whitekid/go-utils/service"
 )
@@ -25,6 +28,11 @@ func New() service.Interface {
 type todoService struct {
 }
 
+// @title TODO API
+// @version 1.0
+// @description This is a simple todo API service.
+// @host
+// @BasePath /
 func (s *todoService) Serve(ctx context.Context, args ...string) error {
 	e := s.setupRoute()
 	return e.Start("127.0.0.1:9998")
@@ -37,11 +45,13 @@ func (s *todoService) setupRoute() *echo.Echo {
 	e.Use(middleware.LoggerWithConfig(loggerConfig))
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("todo-secret"))))
 
-	e.POST("/", s.handleItemCreate)
+	e.POST("/", s.HandleItemCreate)
 	e.GET("/", s.handleItemList)
 	e.GET("/:item_id", s.handleItemGet)
 	e.PUT("/:item_id", s.handleItemUpdate)
 	e.DELETE("/:item_id", s.handleItemDelete)
+
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	return e
 }
@@ -88,11 +98,23 @@ func (s *todoService) saveItems(items []todoItem, c echo.Context) error {
 	return sess.Save(c.Request(), c.Response())
 }
 
+// @summary list todo item
+// @description list todo item
+// @tags todo
+// @success 200 {string} string
+// @router / [get]
 func (s *todoService) handleItemList(c echo.Context) error {
 	items := s.items(c)
 	return c.JSON(http.StatusOK, items)
 }
 
+// @summary get todo item
+// @description get todo item
+// @tags todo
+// @param item_id path string true "todo item ID"
+// @success 200 {string} string
+// @failure 404 {string} string
+// @router /{item_id} [get]
 func (s *todoService) handleItemGet(c echo.Context) error {
 	itemID := c.Param("item_id")
 	if itemID == "" {
@@ -102,12 +124,21 @@ func (s *todoService) handleItemGet(c echo.Context) error {
 	items := s.items(c)
 	for _, item := range items {
 		if item.ID == itemID {
-			return c.JSON(http.StatusOK, item)
+			return c.JSON(http.StatusOK, &item)
 		}
 	}
 	return c.NoContent(http.StatusNotFound)
 }
 
+// @summary update todo item
+// @description update todo item
+// @tags todo
+// @param item_id path string true "todo item ID"
+// @param item body todoItem true "todo item"
+// @success 202 {string} string
+// @failure 400 {string} string
+// @failure 404 {string} string
+// @router /{item_id} [put]
 func (s *todoService) handleItemUpdate(c echo.Context) error {
 	itemID := c.Param("item_id")
 	if itemID == "" {
@@ -116,7 +147,8 @@ func (s *todoService) handleItemUpdate(c echo.Context) error {
 
 	var update todoItem
 	if err := c.Bind(&update); err != nil {
-		return errors.Wrapf(err, "ItemUpdate")
+		log.Errorf("ItemUpdate failed: %s", err)
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	if err := update.validate(); err != nil {
@@ -134,6 +166,13 @@ func (s *todoService) handleItemUpdate(c echo.Context) error {
 	return c.NoContent(http.StatusNotFound)
 }
 
+// @summary delete todo item
+// @description delete todo item
+// @tags todo
+// @param item_id path string true "todo item ID"
+// @success 202 {string} string
+// @failure 404 {string} string
+// @router /{item_id} [delete]
 func (s *todoService) handleItemDelete(c echo.Context) error {
 	itemID := c.Param("item_id")
 	if itemID == "" {
@@ -145,20 +184,31 @@ func (s *todoService) handleItemDelete(c echo.Context) error {
 		if item.ID == itemID {
 			items := append(items[:i], items[i+1:]...)
 			s.saveItems(items, c)
-			return c.JSON(http.StatusAccepted, item)
+			return c.JSON(http.StatusAccepted, &item)
 		}
 	}
 	return c.NoContent(http.StatusNotFound)
 }
 
-func (s *todoService) handleItemCreate(c echo.Context) error {
+// @summary create todo item
+// @description do ping
+// @tags todo
+// @accept json
+// @produce json
+// @param todo body todoItem true "todo item"
+// @success 201 {string} string
+// @failure 400 {string} string
+// @router / [post]
+func (s *todoService) HandleItemCreate(c echo.Context) error {
 	var item todoItem
 	if err := c.Bind(&item); err != nil {
-		return errors.Wrapf(err, "IndexPost")
+		log.Errorf("bind failed: %s", err)
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	item.ID = uuid.New().String()
 	if err := item.validate(); err != nil {
+		log.Errorf("validate failed: %s", err)
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
@@ -167,14 +217,44 @@ func (s *todoService) handleItemCreate(c echo.Context) error {
 
 	s.saveItems(items, c)
 
-	return c.JSON(http.StatusCreated, item)
+	return c.JSON(http.StatusCreated, &item)
 }
 
+// todoItem todo item
 type todoItem struct {
-	ID      string    `json:"id"`
-	Title   string    `json:"title"`
-	DueDate time.Time `json:"due_date"`
-	Rank    int       `json:"rank"`
+	ID      string  `json:"id" example:"628b92ab-6d95-4fbe-b7c6-09cf5cd8941c" format:"uuid"`
+	Title   string  `json:"title" example:"do something in future"`
+	DueDate DueDate `json:"due_date" example:"2006-01-02" format:"date"`
+	Rank    int     `json:"rank" example:"1" format:"int"`
+}
+
+type DueDate struct {
+	time.Time
+}
+
+func Today() (d DueDate) {
+	d.Time = time.Now().UTC().Truncate(time.Hour * 24)
+	return
+}
+
+func (d *DueDate) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return err
+	}
+
+	d.Time = t
+	return nil
+}
+
+func (d *DueDate) MarshalJSON() ([]byte, error) {
+	s := d.Format("2006-01-02")
+	return json.Marshal(s)
 }
 
 func (i *todoItem) validate() error {
