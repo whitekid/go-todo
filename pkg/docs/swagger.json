@@ -20,7 +20,10 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Item"
+                            }
                         }
                     }
                 }
@@ -44,7 +47,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/todo.todoItem"
+                            "$ref": "#/definitions/models.Item"
                         }
                     }
                 ],
@@ -52,13 +55,13 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.Item"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     }
                 }
@@ -84,13 +87,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.Item"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     }
                 }
@@ -115,7 +118,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/todo.todoItem"
+                            "$ref": "#/definitions/models.Item"
                         }
                     }
                 ],
@@ -123,19 +126,19 @@
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.Item"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     }
                 }
@@ -156,8 +159,8 @@
                     }
                 ],
                 "responses": {
-                    "202": {
-                        "description": "Accepted",
+                    "204": {
+                        "description": "No Content",
                         "schema": {
                             "type": "string"
                         }
@@ -165,7 +168,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     }
                 }
@@ -173,12 +176,11 @@
         }
     },
     "definitions": {
-        "todo.todoItem": {
+        "models.Item": {
             "type": "object",
             "properties": {
                 "due_date": {
                     "type": "string",
-                    "format": "date",
                     "example": "2006-01-02"
                 },
                 "id": {
@@ -187,6 +189,7 @@
                     "example": "628b92ab-6d95-4fbe-b7c6-09cf5cd8941c"
                 },
                 "rank": {
+                    "description": "rank order",
                     "type": "integer",
                     "format": "int",
                     "example": 1
@@ -196,6 +199,9 @@
                     "example": "do something in future"
                 }
             }
+        },
+        "todo.HTTPError": {
+            "$ref": "#/definitions/echo.HTTPError"
         }
     }
 }

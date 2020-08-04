@@ -36,7 +36,10 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Item"
+                            }
                         }
                     }
                 }
@@ -60,7 +63,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/todo.todoItem"
+                            "$ref": "#/definitions/models.Item"
                         }
                     }
                 ],
@@ -68,13 +71,13 @@ var doc = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.Item"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     }
                 }
@@ -100,13 +103,13 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.Item"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     }
                 }
@@ -131,7 +134,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/todo.todoItem"
+                            "$ref": "#/definitions/models.Item"
                         }
                     }
                 ],
@@ -139,19 +142,19 @@ var doc = `{
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.Item"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     }
                 }
@@ -172,8 +175,8 @@ var doc = `{
                     }
                 ],
                 "responses": {
-                    "202": {
-                        "description": "Accepted",
+                    "204": {
+                        "description": "No Content",
                         "schema": {
                             "type": "string"
                         }
@@ -181,7 +184,7 @@ var doc = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     }
                 }
@@ -189,12 +192,11 @@ var doc = `{
         }
     },
     "definitions": {
-        "todo.todoItem": {
+        "models.Item": {
             "type": "object",
             "properties": {
                 "due_date": {
                     "type": "string",
-                    "format": "date",
                     "example": "2006-01-02"
                 },
                 "id": {
@@ -203,6 +205,7 @@ var doc = `{
                     "example": "628b92ab-6d95-4fbe-b7c6-09cf5cd8941c"
                 },
                 "rank": {
+                    "description": "rank order",
                     "type": "integer",
                     "format": "int",
                     "example": 1
@@ -212,6 +215,9 @@ var doc = `{
                     "example": "do something in future"
                 }
             }
+        },
+        "todo.HTTPError": {
+            "$ref": "#/definitions/echo.HTTPError"
         }
     }
 }`

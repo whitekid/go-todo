@@ -1,16 +1,16 @@
 basePath: /
 definitions:
-  todo.todoItem:
+  models.Item:
     properties:
       due_date:
         example: "2006-01-02"
-        format: date
         type: string
       id:
         example: 628b92ab-6d95-4fbe-b7c6-09cf5cd8941c
         format: uuid
         type: string
       rank:
+        description: rank order
         example: 1
         format: int
         type: integer
@@ -18,6 +18,8 @@ definitions:
         example: do something in future
         type: string
     type: object
+  todo.HTTPError:
+    $ref: '#/definitions/echo.HTTPError'
 info:
   contact: {}
   description: This is a simple todo API service.
@@ -32,7 +34,9 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            items:
+              $ref: '#/definitions/models.Item'
+            type: array
       summary: list todo item
       tags:
       - todo
@@ -46,18 +50,18 @@ paths:
         name: todo
         required: true
         schema:
-          $ref: '#/definitions/todo.todoItem'
+          $ref: '#/definitions/models.Item'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            type: string
+            $ref: '#/definitions/models.Item'
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/todo.HTTPError'
       summary: create todo item
       tags:
       - todo
@@ -71,14 +75,14 @@ paths:
         required: true
         type: string
       responses:
-        "202":
-          description: Accepted
+        "204":
+          description: No Content
           schema:
             type: string
         "404":
           description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/todo.HTTPError'
       summary: delete todo item
       tags:
       - todo
@@ -94,11 +98,11 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/models.Item'
         "404":
           description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/todo.HTTPError'
       summary: get todo item
       tags:
       - todo
@@ -115,20 +119,20 @@ paths:
         name: item
         required: true
         schema:
-          $ref: '#/definitions/todo.todoItem'
+          $ref: '#/definitions/models.Item'
       responses:
         "202":
           description: Accepted
           schema:
-            type: string
+            $ref: '#/definitions/models.Item'
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/todo.HTTPError'
         "404":
           description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/todo.HTTPError'
       summary: update todo item
       tags:
       - todo

@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
@@ -14,8 +13,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
-	"github.com/swaggo/echo-swagger"
-	_ "github.com/whitekid/go-todo/pkg/docs"
+	echoSwagger "github.com/swaggo/echo-swagger"
+	_ "github.com/whitekid/go-todo/pkg/docs" // swagger docs
+	"github.com/whitekid/go-todo/pkg/models"
 	log "github.com/whitekid/go-utils/logging"
 	"github.com/whitekid/go-utils/service"
 )
@@ -24,6 +24,9 @@ import (
 func New() service.Interface {
 	return &todoService{}
 }
+
+// HTTPError type alias for workaround swagger schema
+type HTTPError = echo.HTTPError
 
 type todoService struct {
 }
@@ -67,7 +70,7 @@ func (s *todoService) session(c echo.Context) *sessions.Session {
 	return sess
 }
 
-func (s *todoService) items(c echo.Context) []todoItem {
+func (s *todoService) items(c echo.Context) []models.Item {
 	sess := s.session(c)
 
 	itemsV, ok := sess.Values["items"]
@@ -75,17 +78,17 @@ func (s *todoService) items(c echo.Context) []todoItem {
 		itemsV = []byte{}
 	}
 
-	items := make([]todoItem, 0)
+	items := make([]models.Item, 0)
 	buf, ok := itemsV.([]byte)
 	b := bytes.NewBuffer(buf)
 	if err := json.NewDecoder(b).Decode(&items); err != nil {
-		log.Errorf("json decode failed: %s, buf: %s", err, string(buf))
+		log.Warnf("json decode failed: %s, buf: %s, reset to empty items", err, string(buf))
 	}
 
 	return items
 }
 
-func (s *todoService) saveItems(items []todoItem, c echo.Context) error {
+func (s *todoService) saveItems(items []models.Item, c echo.Context) error {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(items); err != nil {
 		return errors.Wrapf(err, "saveItems")
@@ -101,7 +104,7 @@ func (s *todoService) saveItems(items []todoItem, c echo.Context) error {
 // @summary list todo item
 // @description list todo item
 // @tags todo
-// @success 200 {string} string
+// @success 200 {array} models.Item
 // @router / [get]
 func (s *todoService) handleItemList(c echo.Context) error {
 	items := s.items(c)
@@ -112,13 +115,13 @@ func (s *todoService) handleItemList(c echo.Context) error {
 // @description get todo item
 // @tags todo
 // @param item_id path string true "todo item ID"
-// @success 200 {string} string
-// @failure 404 {string} string
+// @success 200 {object} models.Item
+// @failure 404 {object} HTTPError
 // @router /{item_id} [get]
 func (s *todoService) handleItemGet(c echo.Context) error {
 	itemID := c.Param("item_id")
 	if itemID == "" {
-		return c.NoContent(http.StatusNotFound)
+		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
 	items := s.items(c)
@@ -127,56 +130,60 @@ func (s *todoService) handleItemGet(c echo.Context) error {
 			return c.JSON(http.StatusOK, &item)
 		}
 	}
-	return c.NoContent(http.StatusNotFound)
+	return echo.NewHTTPError(http.StatusNotFound)
 }
 
 // @summary update todo item
 // @description update todo item
 // @tags todo
 // @param item_id path string true "todo item ID"
-// @param item body todoItem true "todo item"
-// @success 202 {string} string
-// @failure 400 {string} string
-// @failure 404 {string} string
+// @param item body models.Item true "todo item"
+// @success 202 {object} models.Item
+// @failure 400 {object} HTTPError
+// @failure 404 {object} HTTPError
 // @router /{item_id} [put]
 func (s *todoService) handleItemUpdate(c echo.Context) error {
 	itemID := c.Param("item_id")
 	if itemID == "" {
-		return c.NoContent(http.StatusNotFound)
+		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
-	var update todoItem
-	if err := c.Bind(&update); err != nil {
+	var item models.Item
+	if err := c.Bind(&item); err != nil {
 		log.Errorf("ItemUpdate failed: %s", err)
-		return c.String(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err := update.validate(); err != nil {
-		return c.String(http.StatusBadRequest, err.Error())
+	if item.ID != itemID {
+		return echo.NewHTTPError(http.StatusBadRequest, "item ID must be same to given to path")
+	}
+
+	if err := item.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	items := s.items(c)
-	for i, item := range items {
-		if item.ID == itemID {
-			items[i] = update
+	for i, e := range items {
+		if e.ID == itemID {
+			items[i] = item
 			s.saveItems(items, c)
 			return c.JSON(http.StatusAccepted, &items[i])
 		}
 	}
-	return c.NoContent(http.StatusNotFound)
+	return echo.NewHTTPError(http.StatusNotFound)
 }
 
 // @summary delete todo item
 // @description delete todo item
 // @tags todo
 // @param item_id path string true "todo item ID"
-// @success 202 {string} string
-// @failure 404 {string} string
+// @success 204 {string} string
+// @failure 404 {object} HTTPError
 // @router /{item_id} [delete]
 func (s *todoService) handleItemDelete(c echo.Context) error {
 	itemID := c.Param("item_id")
 	if itemID == "" {
-		return c.NoContent(http.StatusNotFound)
+		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
 	items := s.items(c)
@@ -184,10 +191,10 @@ func (s *todoService) handleItemDelete(c echo.Context) error {
 		if item.ID == itemID {
 			items := append(items[:i], items[i+1:]...)
 			s.saveItems(items, c)
-			return c.JSON(http.StatusAccepted, &item)
+			return c.NoContent(http.StatusNoContent)
 		}
 	}
-	return c.NoContent(http.StatusNotFound)
+	return echo.NewHTTPError(http.StatusNotFound)
 }
 
 // @summary create todo item
@@ -195,21 +202,22 @@ func (s *todoService) handleItemDelete(c echo.Context) error {
 // @tags todo
 // @accept json
 // @produce json
-// @param todo body todoItem true "todo item"
-// @success 201 {string} string
-// @failure 400 {string} string
+// @param todo body models.Item true "todo item"
+// @success 201 {object} models.Item
+// @failure 400 {object} HTTPError
 // @router / [post]
 func (s *todoService) HandleItemCreate(c echo.Context) error {
-	var item todoItem
+	var item models.Item
+
 	if err := c.Bind(&item); err != nil {
 		log.Errorf("bind failed: %s", err)
-		return c.String(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	item.ID = uuid.New().String()
-	if err := item.validate(); err != nil {
+	if err := item.Validate(); err != nil {
 		log.Errorf("validate failed: %s", err)
-		return c.String(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	items := s.items(c)
@@ -218,49 +226,4 @@ func (s *todoService) HandleItemCreate(c echo.Context) error {
 	s.saveItems(items, c)
 
 	return c.JSON(http.StatusCreated, &item)
-}
-
-// todoItem todo item
-type todoItem struct {
-	ID      string  `json:"id" example:"628b92ab-6d95-4fbe-b7c6-09cf5cd8941c" format:"uuid"`
-	Title   string  `json:"title" example:"do something in future"`
-	DueDate DueDate `json:"due_date" example:"2006-01-02" format:"date"`
-	Rank    int     `json:"rank" example:"1" format:"int"`
-}
-
-type DueDate struct {
-	time.Time
-}
-
-func Today() (d DueDate) {
-	d.Time = time.Now().UTC().Truncate(time.Hour * 24)
-	return
-}
-
-func (d *DueDate) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return err
-	}
-
-	d.Time = t
-	return nil
-}
-
-func (d *DueDate) MarshalJSON() ([]byte, error) {
-	s := d.Format("2006-01-02")
-	return json.Marshal(s)
-}
-
-func (i *todoItem) validate() error {
-	if i.Title == "" {
-		return errors.New("title required")
-	}
-
-	return nil
 }
