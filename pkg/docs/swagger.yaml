@@ -1,6 +1,12 @@
 basePath: /
 definitions:
   models.Item:
+    $ref: '#/definitions/storage.TodoItem'
+  storage.TodoItem:
+    $ref: '#/definitions/types.TodoItem'
+  todo.HTTPError:
+    $ref: '#/definitions/echo.HTTPError'
+  types.TodoItem:
     properties:
       due_date:
         example: "2006-01-02"
@@ -18,8 +24,6 @@ definitions:
         example: do something in future
         type: string
     type: object
-  todo.HTTPError:
-    $ref: '#/definitions/echo.HTTPError'
 info:
   contact: {}
   description: This is a simple todo API service.

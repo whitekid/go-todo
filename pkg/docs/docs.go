@@ -193,6 +193,15 @@ var doc = `{
     },
     "definitions": {
         "models.Item": {
+            "$ref": "#/definitions/storage.TodoItem"
+        },
+        "storage.TodoItem": {
+            "$ref": "#/definitions/types.TodoItem"
+        },
+        "todo.HTTPError": {
+            "$ref": "#/definitions/echo.HTTPError"
+        },
+        "types.TodoItem": {
             "type": "object",
             "properties": {
                 "due_date": {
@@ -215,9 +224,6 @@ var doc = `{
                     "example": "do something in future"
                 }
             }
-        },
-        "todo.HTTPError": {
-            "$ref": "#/definitions/echo.HTTPError"
         }
     }
 }`

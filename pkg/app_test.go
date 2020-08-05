@@ -113,6 +113,39 @@ func TestCreate(t *testing.T) {
 			require.NotEqual(t, "", created.ID)
 			tt.args.item.ID = created.ID
 			require.Equal(t, &tt.args.item, created)
+
+			got, err := api.Todos.Get(created.ID)
+			require.NoError(t, err)
+			require.Equal(t, created, got)
+
+			items, err := api.Todos.List()
+			require.NoError(t, err)
+			require.Equal(t, 1, len(items))
+		})
+	}
+}
+
+func TestList(t *testing.T) {
+	type args struct {
+	}
+	tests := [...]struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"", args{}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts, teardown := newTestServer()
+			defer teardown()
+			api := client.New(ts.URL)
+
+			got, err := api.Todos.List()
+			if (err != nil) != tt.wantErr {
+				require.Failf(t, `List() failed`, `error = %v, wantErr = %v`, err, tt.wantErr)
+			}
+			_ = got
 		})
 	}
 }

@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
+	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/sessions v1.2.0
 	github.com/labstack/echo-contrib v0.9.0
@@ -13,5 +14,5 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/swaggo/echo-swagger v1.0.0
 	github.com/swaggo/swag v1.6.7
-	github.com/whitekid/go-utils v0.0.0-20200731125056-9286509a5b1f
+	github.com/whitekid/go-utils v0.0.0-20200806102303-e9de4c2d5e84
 )

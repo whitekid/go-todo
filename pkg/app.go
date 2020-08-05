@@ -2,9 +2,7 @@ package todo
 
 //go:generate swag init -g app.go
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -12,10 +10,11 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/pkg/errors"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	_ "github.com/whitekid/go-todo/pkg/docs" // swagger docs
 	"github.com/whitekid/go-todo/pkg/models"
+	"github.com/whitekid/go-todo/pkg/storage"
+	session_storage "github.com/whitekid/go-todo/pkg/storage/session"
 	log "github.com/whitekid/go-utils/logging"
 	"github.com/whitekid/go-utils/service"
 )
@@ -27,6 +26,11 @@ func New() service.Interface {
 
 // HTTPError type alias for workaround swagger schema
 type HTTPError = echo.HTTPError
+
+// Context echo custom Context
+type Context struct {
+	echo.Context
+}
 
 type todoService struct {
 }
@@ -46,7 +50,17 @@ func (s *todoService) setupRoute() *echo.Echo {
 
 	loggerConfig := middleware.DefaultLoggerConfig
 	e.Use(middleware.LoggerWithConfig(loggerConfig))
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	}))
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("todo-secret"))))
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			cc := &Context{c}
+			return next(cc)
+		}
+	})
 
 	e.POST("/", s.HandleItemCreate)
 	e.GET("/", s.handleItemList)
@@ -59,55 +73,14 @@ func (s *todoService) setupRoute() *echo.Echo {
 	return e
 }
 
-func (s *todoService) session(c echo.Context) *sessions.Session {
-	sess, _ := session.Get("todo-session", c)
-	sess.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   86400,
-		HttpOnly: true,
-	}
-
-	return sess
-}
-
-func (s *todoService) items(c echo.Context) []models.Item {
-	sess := s.session(c)
-
-	itemsV, ok := sess.Values["items"]
-	if !ok {
-		itemsV = []byte{}
-	}
-
-	items := make([]models.Item, 0)
-	buf, ok := itemsV.([]byte)
-	b := bytes.NewBuffer(buf)
-	if err := json.NewDecoder(b).Decode(&items); err != nil {
-		log.Warnf("json decode failed: %s, buf: %s, reset to empty items", err, string(buf))
-	}
-
-	return items
-}
-
-func (s *todoService) saveItems(items []models.Item, c echo.Context) error {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(items); err != nil {
-		return errors.Wrapf(err, "saveItems")
-	}
-
-	sess := s.session(c)
-	sess.Values["items"] = buf.Bytes()
-
-	log.Infof("save items %+v, data: %s", items, buf.String())
-	return sess.Save(c.Request(), c.Response())
-}
-
 // @summary list todo item
 // @description list todo item
 // @tags todo
 // @success 200 {array} models.Item
 // @router / [get]
 func (s *todoService) handleItemList(c echo.Context) error {
-	items := s.items(c)
+	storage := session_storage.New(c)
+	items, _ := storage.TodoService().List()
 	return c.JSON(http.StatusOK, items)
 }
 
@@ -124,13 +97,12 @@ func (s *todoService) handleItemGet(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
-	items := s.items(c)
-	for _, item := range items {
-		if item.ID == itemID {
-			return c.JSON(http.StatusOK, &item)
-		}
+	stg := session_storage.New(c)
+	item, err := stg.TodoService().Get(itemID)
+	if err == storage.ErrNotFound {
+		return echo.NewHTTPError(http.StatusNotFound)
 	}
-	return echo.NewHTTPError(http.StatusNotFound)
+	return c.JSON(http.StatusOK, item)
 }
 
 // @summary update todo item
@@ -162,15 +134,16 @@ func (s *todoService) handleItemUpdate(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	items := s.items(c)
-	for i, e := range items {
-		if e.ID == itemID {
-			items[i] = item
-			s.saveItems(items, c)
-			return c.JSON(http.StatusAccepted, &items[i])
+	todos := session_storage.New(c).TodoService()
+	if err := todos.Update(&item); err != nil {
+		if err == storage.ErrNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, err)
 		}
+
+		return err
 	}
-	return echo.NewHTTPError(http.StatusNotFound)
+
+	return c.JSON(http.StatusAccepted, &item)
 }
 
 // @summary delete todo item
@@ -186,15 +159,14 @@ func (s *todoService) handleItemDelete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
-	items := s.items(c)
-	for i, item := range items {
-		if item.ID == itemID {
-			items := append(items[:i], items[i+1:]...)
-			s.saveItems(items, c)
+	if err := session_storage.New(c).TodoService().Delete(itemID); err != nil {
+		if err == storage.ErrNotFound {
 			return c.NoContent(http.StatusNoContent)
 		}
+		return err
 	}
-	return echo.NewHTTPError(http.StatusNotFound)
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 // @summary create todo item
@@ -220,10 +192,9 @@ func (s *todoService) HandleItemCreate(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	items := s.items(c)
-	items = append(items, item)
-
-	s.saveItems(items, c)
+	if err := session_storage.New(c).TodoService().Create(&item); err != nil {
+		return err
+	}
 
 	return c.JSON(http.StatusCreated, &item)
 }
