@@ -15,4 +15,5 @@ require (
 	github.com/swaggo/echo-swagger v1.0.0
 	github.com/swaggo/swag v1.6.7
 	github.com/whitekid/go-utils v0.0.0-20200806102303-e9de4c2d5e84
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )

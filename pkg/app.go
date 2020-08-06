@@ -68,6 +68,8 @@ func (s *todoService) setupRoute() *echo.Echo {
 	e.PUT("/:item_id", s.handleItemUpdate)
 	e.DELETE("/:item_id", s.handleItemDelete)
 
+	newGoogleOAuthHandler().Route(e.Group("/auth"))
+
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	return e
