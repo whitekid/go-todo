@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 
 	"github.com/gorilla/sessions"
-	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	. "github.com/whitekid/go-todo/pkg/storage/types"
@@ -14,23 +13,15 @@ import (
 )
 
 const (
-	sessionName = "todo-session"
-	keyItems    = "items"
+	keyItems = "items"
 )
 
 // New create new session based storage
-func New(c echo.Context) Interface {
+func New(c echo.Context, session *sessions.Session) Interface {
 	s := &sessionStorage{
 		context: c,
+		session: session,
 	}
-
-	sess, _ := session.Get(sessionName, c)
-	sess.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   86400,
-		HttpOnly: true,
-	}
-	s.session = sess
 
 	s.todoService = &todoStorage{storage: s}
 	return s

@@ -18,5 +18,5 @@ type (
 )
 
 func New() Interface {
-	return session.New(nil)
+	return session.New(nil, nil)
 }
