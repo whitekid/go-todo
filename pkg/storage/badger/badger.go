@@ -11,6 +11,8 @@ import (
 	"github.com/whitekid/go-utils/logging"
 )
 
+const Name = "badger"
+
 type logger struct {
 	logging.Interface
 }
@@ -22,7 +24,7 @@ func New(name string) (Interface, error) {
 	l := &logger{
 		Interface: logging.New(),
 	}
-	db, err := badger.Open(badger.DefaultOptions(name).WithLogger(l))
+	db, err := badger.Open(badger.DefaultOptions(name + ".db").WithLogger(l))
 	if err != nil {
 		return nil, errors.Wrap(err, "badger.New")
 	}

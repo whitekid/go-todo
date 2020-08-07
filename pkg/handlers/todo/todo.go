@@ -8,29 +8,35 @@ import (
 	. "github.com/whitekid/go-todo/pkg/handlers/types"
 	"github.com/whitekid/go-todo/pkg/models"
 	"github.com/whitekid/go-todo/pkg/storage"
-	session_storage "github.com/whitekid/go-todo/pkg/storage/session"
-	. "github.com/whitekid/go-todo/pkg/types"
+	. "github.com/whitekid/go-todo/pkg/storage/types"
 	log "github.com/whitekid/go-utils/logging"
 )
 
 // New create todo handler
 func New() Handler {
-	return &todoHandler{}
+	storage, err := storage.New("todo")
+	if err != nil {
+		panic(err)
+	}
+
+	return &todoHandler{
+		storage: storage,
+	}
 }
 
 type todoHandler struct {
-}
-
-func (h *todoHandler) storage(c echo.Context) storage.Interface {
-	return c.Get("storage").(storage.Interface)
+	storage storage.Interface
 }
 
 func (h *todoHandler) Route(r Router) {
 	r.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			cc := c.(*Context)
+			// setup context
+			cc, ok := h.storage.(Contexter)
+			if ok {
+				cc.SetContext(c)
+			}
 
-			c.Set("storage", session_storage.New(c, cc.Session()))
 			return next(c)
 		}
 	})
@@ -65,7 +71,7 @@ func (h *todoHandler) handleCreate(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err := h.storage(c).TodoService().Create(&item); err != nil {
+	if err := h.storage.TodoService().Create(&item); err != nil {
 		return err
 	}
 
@@ -78,7 +84,7 @@ func (h *todoHandler) handleCreate(c echo.Context) error {
 // @success 200 {array} models.Item
 // @router / [get]
 func (h *todoHandler) handleList(c echo.Context) error {
-	items, _ := h.storage(c).TodoService().List()
+	items, _ := h.storage.TodoService().List()
 	return c.JSON(http.StatusOK, items)
 }
 
@@ -95,7 +101,7 @@ func (h *todoHandler) handleGet(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
-	item, err := h.storage(c).TodoService().Get(itemID)
+	item, err := h.storage.TodoService().Get(itemID)
 	if err == storage.ErrNotFound {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
@@ -131,7 +137,7 @@ func (h *todoHandler) handleUpdate(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err := h.storage(c).TodoService().Update(&item); err != nil {
+	if err := h.storage.TodoService().Update(&item); err != nil {
 		if err == storage.ErrNotFound {
 			return echo.NewHTTPError(http.StatusNotFound, err)
 		}
@@ -155,7 +161,7 @@ func (h *todoHandler) handleDelete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
-	if err := h.storage(c).TodoService().Delete(itemID); err != nil {
+	if err := h.storage.TodoService().Delete(itemID); err != nil {
 		if err == storage.ErrNotFound {
 			return c.NoContent(http.StatusNoContent)
 		}

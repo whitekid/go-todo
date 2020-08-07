@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
 
@@ -18,6 +19,10 @@ const (
 // Interface represent storage abstract layer
 type Interface interface {
 	TodoService() TodoStorage
+}
+
+type Contexter interface {
+	SetContext(c echo.Context)
 }
 
 // TodoStorage represents todo storage

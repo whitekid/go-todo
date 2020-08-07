@@ -14,6 +14,15 @@ func (c *Context) Session() *sessions.Session {
 	return c.Get("session").(*sessions.Session)
 }
 
+func (c *Context) Email() string {
+	sess := c.Session()
+	if email, ok := sess.Values["email"].(string); ok {
+		return email
+	}
+
+	return ""
+}
+
 func (c *Context) OauthSession() *sessions.Session {
 	return c.Get("oauth-session").(*sessions.Session)
 }

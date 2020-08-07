@@ -9,29 +9,34 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	. "github.com/whitekid/go-todo/pkg/storage/types"
+	. "github.com/whitekid/go-todo/pkg/types"
 	log "github.com/whitekid/go-utils/logging"
 )
 
 const (
+	Name     = "session"
 	keyItems = "items"
 )
 
 // New create new session based storage
-func New(c echo.Context, session *sessions.Session) Interface {
-	s := &sessionStorage{
-		context: c,
-		session: session,
-	}
+// session storage does not provide user
+func New(name string) Interface {
+	s := &sessionStorage{}
 
 	s.todoService = &todoStorage{storage: s}
 	return s
 }
 
 type sessionStorage struct {
-	context echo.Context
+	context *Context
 	session *sessions.Session
 
 	todoService *todoStorage
+}
+
+func (s *sessionStorage) SetContext(c echo.Context) {
+	s.context = c.(*Context)
+	s.session = s.context.Session()
 }
 
 func (s *sessionStorage) TodoService() TodoStorage {
