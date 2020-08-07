@@ -8,12 +8,12 @@ import (
 	. "github.com/whitekid/go-todo/pkg/handlers/types"
 	"github.com/whitekid/go-todo/pkg/models"
 	"github.com/whitekid/go-todo/pkg/storage"
-	. "github.com/whitekid/go-todo/pkg/storage/types"
 	log "github.com/whitekid/go-utils/logging"
 )
 
 // New create todo handler
 func New() Handler {
+	// TODO close storage
 	storage, err := storage.New("todo")
 	if err != nil {
 		panic(err)
@@ -31,11 +31,11 @@ type todoHandler struct {
 func (h *todoHandler) Route(r Router) {
 	r.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// setup context
-			cc, ok := h.storage.(Contexter)
-			if ok {
-				cc.SetContext(c)
-			}
+			h.storage.SetContext(c)
+
+			defer func() {
+				h.storage.SetContext(nil)
+			}()
 
 			return next(c)
 		}
@@ -84,7 +84,10 @@ func (h *todoHandler) handleCreate(c echo.Context) error {
 // @success 200 {array} models.Item
 // @router / [get]
 func (h *todoHandler) handleList(c echo.Context) error {
-	items, _ := h.storage.TodoService().List()
+	items, err := h.storage.TodoService().List()
+	if err != nil && err == storage.ErrNotAuthenticated {
+		return echo.NewHTTPError(http.StatusForbidden, err)
+	}
 	return c.JSON(http.StatusOK, items)
 }
 
@@ -102,8 +105,14 @@ func (h *todoHandler) handleGet(c echo.Context) error {
 	}
 
 	item, err := h.storage.TodoService().Get(itemID)
-	if err == storage.ErrNotFound {
-		return echo.NewHTTPError(http.StatusNotFound)
+	if err != nil {
+		switch err {
+		case storage.ErrNotFound:
+			return echo.NewHTTPError(http.StatusNotFound)
+		case storage.ErrNotAuthenticated:
+			return echo.NewHTTPError(http.StatusForbidden, err)
+		}
+		return err
 	}
 	return c.JSON(http.StatusOK, item)
 }
@@ -138,8 +147,11 @@ func (h *todoHandler) handleUpdate(c echo.Context) error {
 	}
 
 	if err := h.storage.TodoService().Update(&item); err != nil {
-		if err == storage.ErrNotFound {
-			return echo.NewHTTPError(http.StatusNotFound, err)
+		switch err {
+		case storage.ErrNotFound:
+			return echo.NewHTTPError(http.StatusNotFound)
+		case storage.ErrNotAuthenticated:
+			return echo.NewHTTPError(http.StatusForbidden, err)
 		}
 
 		return err
@@ -162,8 +174,11 @@ func (h *todoHandler) handleDelete(c echo.Context) error {
 	}
 
 	if err := h.storage.TodoService().Delete(itemID); err != nil {
-		if err == storage.ErrNotFound {
-			return c.NoContent(http.StatusNoContent)
+		switch err {
+		case storage.ErrNotFound:
+			return echo.NewHTTPError(http.StatusNotFound)
+		case storage.ErrNotAuthenticated:
+			return echo.NewHTTPError(http.StatusForbidden, err)
 		}
 		return err
 	}

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	. "github.com/whitekid/go-todo/pkg/storage/types"
@@ -29,14 +28,19 @@ func New(name string) Interface {
 
 type sessionStorage struct {
 	context *Context
-	session *sessions.Session
 
 	todoService *todoStorage
 }
 
 func (s *sessionStorage) SetContext(c echo.Context) {
-	s.context = c.(*Context)
-	s.session = s.context.Session()
+	if c == nil {
+		s.context = nil
+	} else {
+		s.context = c.(*Context)
+	}
+}
+
+func (s *sessionStorage) Close() {
 }
 
 func (s *sessionStorage) TodoService() TodoStorage {
@@ -48,7 +52,7 @@ type todoStorage struct {
 }
 
 func (t *todoStorage) List() ([]TodoItem, error) {
-	value, ok := t.storage.session.Values[keyItems]
+	value, ok := t.storage.context.Session().Values[keyItems]
 	if !ok {
 		value = []byte{}
 	}
@@ -69,7 +73,7 @@ func (t *todoStorage) saveItems(items []TodoItem) error {
 		return errors.Wrapf(err, "saveItems")
 	}
 
-	sess := t.storage.session
+	sess := t.storage.context.Session()
 	sess.Values[keyItems] = buf.Bytes()
 
 	log.Infof("save items %+v, data: %s", items, buf.String())

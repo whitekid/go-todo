@@ -9,8 +9,10 @@ import (
 )
 
 var (
-	ErrNotFound = types.ErrNotFound
-	Today       = types.Today
+	ErrNotFound         = types.ErrNotFound
+	ErrNotAuthenticated = types.ErrNotAuthenticated
+
+	Today = types.Today
 )
 
 type (

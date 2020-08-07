@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("Not found")
+	ErrNotFound         = errors.New("fot found")
+	ErrNotAuthenticated = errors.New("not authenticated")
 )
 
 const (
@@ -18,11 +19,11 @@ const (
 
 // Interface represent storage abstract layer
 type Interface interface {
-	TodoService() TodoStorage
-}
-
-type Contexter interface {
 	SetContext(c echo.Context)
+
+	TodoService() TodoStorage
+
+	Close()
 }
 
 // TodoStorage represents todo storage

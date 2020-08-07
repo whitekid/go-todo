@@ -135,5 +135,5 @@ func (g *googleOAuthHandler) handleCallback(c echo.Context) error {
 	sess.Values["email"] = user.Email
 	sess.Save(c.Request(), c.Response())
 
-	return c.Redirect(http.StatusFound, "/oauth/")
+	return c.Redirect(http.StatusFound, "/")
 }

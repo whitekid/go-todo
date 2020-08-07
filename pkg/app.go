@@ -73,7 +73,7 @@ func (s *todoService) setupRoute() *echo.Echo {
 	oauth.New(oauth.Options{
 		ClientID:     os.Getenv("TODO_CLIENT_ID"),
 		ClientSecret: os.Getenv("TODO_CLIENT_SECRET"),
-		RedirectURL:  "http://127.0.0.1:9998/oauth/callback", // TODO configurable redirectURL
+		RedirectURL:  os.Getenv("TODO_ROOT_URL") + "/oauth/callback", // TODO configurable redirectURL
 	}).Route(e.Group("/oauth",
 		func(next echo.HandlerFunc) echo.HandlerFunc {
 			return func(c echo.Context) error {

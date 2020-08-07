@@ -14,6 +14,7 @@ func TestBadger(t *testing.T) {
 	defer fixtures.TempDir(".", "testdb_", func(tempDir string) { dir = tempDir })()
 
 	s, err := New(dir)
+	defer s.Close()
 	require.NoError(t, err)
 
 	todos := s.TodoService()
@@ -45,5 +46,4 @@ func TestBadger(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 0, len(items))
 	}
-
 }
