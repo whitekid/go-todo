@@ -75,3 +75,29 @@ func (db *DB) Delete(key string) error {
 
 	return nil
 }
+
+func (db *DB) Iter(prefix string, onItem func(key string, vale []byte) error) error {
+	if err := db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+
+		for it.Seek([]byte(prefix)); it.ValidForPrefix([]byte(prefix)); it.Next() {
+			item := it.Item()
+			key := string(item.Key())
+
+			if err := item.Value(func(v []byte) error {
+				return onItem(key, v)
+			}); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -41,6 +41,10 @@ paths:
             items:
               $ref: '#/definitions/models.Item'
             type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
         "403":
           description: Forbidden
           schema:
@@ -72,6 +76,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/todo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
         "403":
           description: Forbidden
           schema:
@@ -95,6 +103,10 @@ paths:
           description: No Content
           schema:
             type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
         "403":
           description: Forbidden
           schema:
@@ -121,6 +133,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Item'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
         "403":
           description: Forbidden
           schema:
@@ -155,6 +171,10 @@ paths:
             $ref: '#/definitions/models.Item'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/todo.HTTPError'
         "403":

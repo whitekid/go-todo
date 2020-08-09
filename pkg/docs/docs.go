@@ -47,6 +47,12 @@ var doc = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
@@ -96,6 +102,12 @@ var doc = `{
                             "$ref": "#/definitions/todo.HTTPError"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
@@ -131,6 +143,12 @@ var doc = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.Item"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     },
                     "403": {
@@ -189,6 +207,12 @@ var doc = `{
                             "$ref": "#/definitions/todo.HTTPError"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
@@ -228,6 +252,12 @@ var doc = `{
                         "description": "No Content",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     },
                     "403": {

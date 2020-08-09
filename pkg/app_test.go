@@ -7,22 +7,22 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/whitekid/go-todo/pkg/client"
 	"github.com/whitekid/go-todo/pkg/models"
+	"github.com/whitekid/go-todo/pkg/utils"
 )
-
-const testEmail = "todo@woosum.net"
 
 func newTestServer() (*httptest.Server, string, func()) {
 	s := New().(*todoService)
 	e := s.setupRoute()
 
-	t, err := s.storage.TokenService().Create(testEmail)
+	email := utils.RandomString(5) + "@domain.com"
+	t, err := s.storage.TokenService().Create(email)
 	if err != nil {
 		panic(err)
 	}
 
 	ts := httptest.NewServer(e)
 	return ts, t.Token, func() {
-		s.storage.TokenService().Delete(t.Token)
+		s.storage.UserService().Delete(email)
 		ts.Close()
 	}
 }

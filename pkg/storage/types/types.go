@@ -28,6 +28,7 @@ type Interface interface {
 type UserService interface {
 	Get(email string) (*User, error)
 	Create(user *User) error
+	Delete(email string) error
 }
 
 type TokenService interface {

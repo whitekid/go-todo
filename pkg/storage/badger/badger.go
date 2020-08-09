@@ -1,7 +1,6 @@
 package badger
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -38,6 +37,10 @@ func New(name string) (Interface, error) {
 	s := &badgerStorage{
 		cancel: cancel,
 		db:     db,
+
+		userDeleteCh:  make(chan *string),
+		todoDeletedCh: make(chan *string),
+		todoUpdateCh:  make(chan *todoUpdate),
 	}
 
 	s.userService = &badgerUserService{
@@ -49,17 +52,17 @@ func New(name string) (Interface, error) {
 	}
 
 	s.todoService = &badgerTodoService{
-		storage:   s,
-		deletedCh: make(chan *string),
-		updateCh:  make(chan *string),
+		storage: s,
 	}
-	go s.todoService.syncAllItems()
+	go s.handleUpdates()
 
 	// close() callback
 	go func() {
 		<-ctx.Done()
-		close(s.todoService.deletedCh)
-		close(s.todoService.updateCh)
+
+		close(s.userDeleteCh)
+		close(s.todoDeletedCh)
+		close(s.todoUpdateCh)
 
 		s.db.Close()
 	}()
@@ -91,6 +94,21 @@ func (s *badgerUserService) Get(email string) (*User, error) {
 	return &user, nil
 }
 
+func (s *badgerUserService) Delete(email string) error {
+	if err := s.storage.db.Delete(fmt.Sprintf("/users/%s", email)); err != nil {
+		return errors.Wrapf(err, "delete")
+	}
+
+	s.storage.userDeleteCh <- &email
+
+	return nil
+}
+
+type todoUpdate struct {
+	email *string
+	id    *string
+}
+
 //
 //  /todos/all/c9be58c3-e164-42de-a301-8ad3fdbf553b    : all todo object
 //  /todos/{email}/c9be58c3-e164-42de-a301-8ad3fdbf553b  : users todo item
@@ -98,6 +116,10 @@ func (s *badgerUserService) Get(email string) (*User, error) {
 type badgerStorage struct {
 	cancel context.CancelFunc
 	db     *badgerx.DB
+
+	userDeleteCh  chan *string
+	todoDeletedCh chan *string
+	todoUpdateCh  chan *todoUpdate
 
 	userService  *badgerUserService
 	tokenService *badgerTokenService
@@ -118,6 +140,69 @@ func (s *badgerStorage) TokenService() TokenService {
 
 func (s *badgerStorage) TodoService() TodoService {
 	return s.todoService
+}
+
+func (s *badgerStorage) handleUpdates() {
+	go func() {
+		for email := range s.userDeleteCh {
+			// delete user token
+			tokens := []string{}
+
+			s.db.Iter("/access_tokens/", func(key string, value []byte) error {
+				var token AccessToken
+				if err := json.Unmarshal(value, &token); err != nil {
+					return err
+				}
+
+				if *email == token.Email {
+					tokens = append(tokens, token.Token)
+				}
+
+				return nil
+			})
+
+			for _, t := range tokens {
+				s.tokenService.Delete(t)
+			}
+
+			// delete user todo
+			ids := []string{}
+			s.db.Iter(fmt.Sprintf("/todos/%s/", *email), func(key string, value []byte) error {
+				var todo TodoItem
+				if err := s.db.GetJSON(key, &todo); err != nil {
+					return err
+				}
+				ids = append(ids, todo.ID)
+				return nil
+			})
+			for _, id := range ids {
+				s.todoService.Delete(*email, id)
+				s.todoService.Delete("", id)
+			}
+		}
+	}()
+
+	go func() {
+		for itemID := range s.todoDeletedCh {
+			s.db.Delete(s.todoService.keyTodoItem("", *itemID))
+		}
+	}()
+
+	go func() {
+		for updates := range s.todoUpdateCh {
+			var item TodoItem
+
+			// sync user todo --> all todo
+			if err := s.db.GetJSON(s.todoService.keyTodoItem(*updates.email, *updates.id), &item); err != nil {
+				log.Errorf("sync update failed: %v", err)
+				continue
+			}
+
+			if err := s.db.SetJSON(s.todoService.keyTodoItem("", *updates.id), &item); err != nil {
+				log.Errorf("sync update failed: %v", err)
+			}
+		}
+	}()
 }
 
 //
@@ -166,14 +251,15 @@ func (s *badgerTokenService) Get(token string) (*AccessToken, error) {
 }
 
 func (s *badgerTokenService) Delete(token string) error {
-	return s.storage.db.Delete(fmt.Sprintf("/access_tokens/%s", token))
+	if err := s.storage.db.Delete(fmt.Sprintf("/access_tokens/%s", token)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type badgerTodoService struct {
 	storage *badgerStorage
-
-	deletedCh chan *string
-	updateCh  chan *string
 }
 
 func (t *badgerTodoService) keyTodoItem(email, id string) string {
@@ -184,42 +270,21 @@ func (t *badgerTodoService) keyTodoItem(email, id string) string {
 	}
 }
 
-func (t *badgerTodoService) keyAllTodItem(id string) string {
-	return "/todos/all/" + id
-}
-
 func (t *badgerTodoService) List(email string) ([]TodoItem, error) {
 	items := []TodoItem{}
 
-	if err := t.storage.db.View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
-		defer it.Close()
+	if err := t.storage.db.Iter(t.keyTodoItem(email, ""), func(key string, value []byte) error {
+		var item TodoItem
 
-		prefix := []byte(t.keyTodoItem(email, ""))
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-			item := it.Item()
-			key := item.Key()
-			if err := item.Value(func(v []byte) error {
-				var item TodoItem
-
-				buf := bytes.NewBuffer(v)
-				if err := json.NewDecoder(buf).Decode(&item); err != nil {
-					return err
-				}
-
-				if !strings.HasSuffix(string(key), "/"+item.ID) {
-					return errors.Errorf("key and value mismatch: key=%s, value=%v", key, item)
-				}
-
-				items = append(items, item)
-
-				return nil
-			}); err != nil {
-				return err
-			}
-			return nil
+		if err := json.Unmarshal(value, &item); err != nil {
+			return err
 		}
 
+		if !strings.HasSuffix(string(key), "/"+item.ID) {
+			return errors.Errorf("key and value mismatch: key=%s, value=%v", key, item)
+		}
+
+		items = append(items, item)
 		return nil
 	}); err != nil {
 		return nil, err
@@ -249,6 +314,9 @@ func (t *badgerTodoService) Update(email string, item *TodoItem) error {
 	if err := t.storage.db.SetJSON(t.keyTodoItem(email, item.ID), item); err != nil {
 		return err
 	}
+
+	t.storage.todoUpdateCh <- &todoUpdate{&email, &item.ID}
+
 	return nil
 }
 
@@ -261,31 +329,7 @@ func (t *badgerTodoService) Delete(email string, itemID string) error {
 		return err
 	}
 
-	t.deletedCh <- &itemID
+	t.storage.todoDeletedCh <- &itemID
 
 	return nil
-}
-
-// sync to all items when user item updated
-func (t *badgerTodoService) syncAllItems() {
-	go func() {
-		for itemID := range t.deletedCh {
-			t.storage.db.Delete(t.keyAllTodItem(*itemID))
-		}
-	}()
-
-	go func() {
-		for itemID := range t.updateCh {
-			var item TodoItem
-
-			if err := t.storage.db.GetJSON(t.keyTodoItem("", *itemID), &item); err != nil {
-				log.Errorf("sync update failed: %v", err)
-				continue
-			}
-
-			if err := t.storage.db.SetJSON(t.keyAllTodItem(*itemID), &item); err != nil {
-				log.Errorf("sync update failed: %v", err)
-			}
-		}
-	}()
 }
