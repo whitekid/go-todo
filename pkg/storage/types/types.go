@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
 
@@ -19,26 +18,48 @@ const (
 
 // Interface represent storage abstract layer
 type Interface interface {
-	SetContext(c echo.Context)
-
-	TodoService() TodoStorage
+	UserService() UserService
+	TokenService() TokenService
+	TodoService() TodoService
 
 	Close()
 }
 
-// TodoStorage represents todo storage
-type TodoStorage interface {
-	Create(*TodoItem) error
+type UserService interface {
+	Get(email string) (*User, error)
+	Create(user *User) error
+}
 
-	List() ([]TodoItem, error) // list todo items
+type TokenService interface {
+	Create(email string) (*AccessToken, error)
+	Get(token string) (*AccessToken, error)
+	Delete(token string) error
+}
+
+// TodoService represents todo storage
+type TodoService interface {
+	Create(email string, item *TodoItem) error
+
+	List(email string) ([]TodoItem, error) // list todo items
 
 	// return ErrNotFound if item not found
-	Get(itemID string) (*TodoItem, error)
+	Get(email string, itemID string) (*TodoItem, error)
 
 	// return ErrNotFound if item not found
-	Update(item *TodoItem) error
+	Update(email string, item *TodoItem) error
 
-	Delete(itemID string) error
+	Delete(email string, itemID string) error
+}
+
+// User user informations
+type User struct {
+	Email string `json:"email"`
+}
+
+type AccessToken struct {
+	Token  string    `json:"token"`
+	Email  string    `json:"email"`
+	Expire time.Time `json:"time"`
 }
 
 // TodoItem todo item

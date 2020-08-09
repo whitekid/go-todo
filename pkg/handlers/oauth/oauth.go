@@ -4,15 +4,15 @@ package oauth
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	. "github.com/whitekid/go-todo/pkg/handlers/types"
+	"github.com/whitekid/go-todo/pkg/storage"
 	. "github.com/whitekid/go-todo/pkg/types"
+	"github.com/whitekid/go-todo/pkg/utils"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -25,13 +25,10 @@ type Options struct {
 	Path         string
 }
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
 // New return google oauth handler
-func New(opts Options) Handler {
+func New(storage storage.Interface, opts Options) Handler {
 	return &googleOAuthHandler{
+		storage: storage,
 		oauthConf: &oauth2.Config{
 			ClientID:     opts.ClientID,
 			ClientSecret: opts.ClientSecret,
@@ -48,49 +45,42 @@ func New(opts Options) Handler {
 
 type googleOAuthHandler struct {
 	oauthConf *oauth2.Config
+	storage   storage.Interface
 
 	path string
 }
 
 func (g *googleOAuthHandler) Route(r Router) {
+	r.Use(
+		session.Middleware(sessions.NewCookieStore([]byte("todo"))),
+		func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				sess, _ := session.Get("oauth", c)
+				sess.Options = &sessions.Options{
+					Path:   "/oauth",
+					MaxAge: 300,
+				}
+				c.Set("oauth-session", sess)
+
+				return next(c)
+			}
+		})
 	r.GET("/", g.handleAuth)
 	r.GET("/callback", g.handleCallback)
 }
 
-var charset = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-// TODO move to go-utils
-func randomString(l int) string {
-	return strings.Map(func(r rune) rune { return charset[rand.Intn(len(charset))] }, string(make([]rune, l)))
-}
-
 func (g *googleOAuthHandler) oauthSession(c echo.Context) *sessions.Session {
-	return c.(*Context).OauthSession()
-}
-
-func (g *googleOAuthHandler) session(c echo.Context) *sessions.Session {
-	return c.(*Context).Session()
+	return c.(*Context).Get("oauth-session").(*sessions.Session)
 }
 
 func (g *googleOAuthHandler) handleAuth(c echo.Context) error {
-	session := g.session(c)
-	value, ok := session.Values["email"]
-	if !ok {
-		return g.authenticate(c)
-	}
-
-	email, ok := value.(string)
-	if !ok {
-		return g.authenticate(c)
-	}
-
-	return c.String(http.StatusOK, email)
+	return g.authenticate(c)
 }
 
 func (g *googleOAuthHandler) authenticate(c echo.Context) error {
 	session := g.oauthSession(c)
 
-	state := randomString(32)
+	state := utils.RandomString(32)
 	session.Values["state"] = state
 	session.Save(c.Request(), c.Response())
 
@@ -131,9 +121,10 @@ func (g *googleOAuthHandler) handleCallback(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	sess = g.session(c)
-	sess.Values["email"] = user.Email
-	sess.Save(c.Request(), c.Response())
+	accessToken, err := g.storage.TokenService().Create(user.Email)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-	return c.Redirect(http.StatusFound, "/")
+	return c.String(http.StatusOK, accessToken.Token)
 }

@@ -9,16 +9,26 @@ import (
 	"github.com/whitekid/go-todo/pkg/models"
 )
 
-func newTestServer() (*httptest.Server, func()) {
+const testEmail = "todo@woosum.net"
+
+func newTestServer() (*httptest.Server, string, func()) {
 	s := New().(*todoService)
 	e := s.setupRoute()
 
+	t, err := s.storage.TokenService().Create(testEmail)
+	if err != nil {
+		panic(err)
+	}
+
 	ts := httptest.NewServer(e)
-	return ts, func() { ts.Close() }
+	return ts, t.Token, func() {
+		s.storage.TokenService().Delete(t.Token)
+		ts.Close()
+	}
 }
 
 func TestTodo(t *testing.T) {
-	ts, teardown := newTestServer()
+	ts, token, teardown := newTestServer()
 	defer teardown()
 
 	item := models.Item{
@@ -27,7 +37,7 @@ func TestTodo(t *testing.T) {
 		Rank:    1,
 	}
 
-	api := client.New(ts.URL)
+	api := client.New(ts.URL, token)
 
 	// create
 	var created *models.Item
@@ -101,9 +111,9 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts, teardown := newTestServer()
+			ts, token, teardown := newTestServer()
 			defer teardown()
-			api := client.New(ts.URL)
+			api := client.New(ts.URL, token)
 
 			created, err := api.Todos.Create(&tt.args.item)
 			if (err != nil) != tt.wantErr {
@@ -137,9 +147,9 @@ func TestList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts, teardown := newTestServer()
+			ts, token, teardown := newTestServer()
 			defer teardown()
-			api := client.New(ts.URL)
+			api := client.New(ts.URL, token)
 
 			got, err := api.Todos.List()
 			if (err != nil) != tt.wantErr {
@@ -163,9 +173,9 @@ func TestUpdate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts, teardown := newTestServer()
+			ts, token, teardown := newTestServer()
 			defer teardown()
-			api := client.New(ts.URL)
+			api := client.New(ts.URL, token)
 
 			created, err := api.Todos.Create(&tt.args.item)
 			require.NoError(t, err)

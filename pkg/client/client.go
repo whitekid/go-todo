@@ -1,16 +1,18 @@
 package client
 
 import (
+	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"github.com/whitekid/go-todo/pkg/models"
 	"github.com/whitekid/go-utils/request"
 )
 
 // New create new client
-func New(endpoint string) *Client {
+func New(endpoint string, key string) *Client {
 	client := &Client{
-		endpoint: endpoint,
-		sess:     request.NewSession(nil),
+		endpoint:  endpoint,
+		sess:      request.NewSession(nil),
+		keyHeader: "Bearer " + key,
 	}
 
 	client.Todos = &Todos{client: client}
@@ -20,8 +22,9 @@ func New(endpoint string) *Client {
 
 // Client todo item client
 type Client struct {
-	endpoint string
-	sess     request.Interface
+	endpoint  string
+	sess      request.Interface
+	keyHeader string
 
 	Todos *Todos
 }
@@ -32,7 +35,9 @@ type Todos struct {
 }
 
 func (t *Todos) Create(item *models.Item) (*models.Item, error) {
-	resp, err := t.client.sess.Post(t.client.endpoint).JSON(item).Do()
+	resp, err := t.client.sess.Post(t.client.endpoint).
+		Header(echo.HeaderAuthorization, t.client.keyHeader).
+		JSON(item).Do()
 	if err != nil {
 		return nil, errors.Wrapf(err, "create")
 	}
@@ -53,7 +58,9 @@ func (t *Todos) Create(item *models.Item) (*models.Item, error) {
 
 // List list todo item
 func (t *Todos) List() ([]models.Item, error) {
-	resp, err := t.client.sess.Get("%s", t.client.endpoint).Do()
+	resp, err := t.client.sess.Get("%s", t.client.endpoint).
+		Header(echo.HeaderAuthorization, t.client.keyHeader).
+		Do()
 	if err != nil {
 		return nil, errors.Wrapf(err, "list")
 	}
@@ -73,7 +80,9 @@ func (t *Todos) List() ([]models.Item, error) {
 
 // Get get todo item
 func (t *Todos) Get(itemID string) (*models.Item, error) {
-	resp, err := t.client.sess.Get("%s/%s", t.client.endpoint, itemID).Do()
+	resp, err := t.client.sess.Get("%s/%s", t.client.endpoint, itemID).
+		Header(echo.HeaderAuthorization, t.client.keyHeader).
+		Do()
 	if err != nil {
 		return nil, errors.Wrapf(err, "get")
 	}
@@ -93,7 +102,10 @@ func (t *Todos) Get(itemID string) (*models.Item, error) {
 
 // Update update todo item
 func (t *Todos) Update(item *models.Item) (*models.Item, error) {
-	resp, err := t.client.sess.Put("%s/%s", t.client.endpoint, item.ID).JSON(item).Do()
+	resp, err := t.client.sess.Put("%s/%s", t.client.endpoint, item.ID).
+		Header(echo.HeaderAuthorization, t.client.keyHeader).
+		JSON(item).
+		Do()
 	if err != nil {
 		return nil, errors.Wrapf(err, "update")
 	}
@@ -113,7 +125,9 @@ func (t *Todos) Update(item *models.Item) (*models.Item, error) {
 
 // Delete delete todo item
 func (t *Todos) Delete(itemID string) error {
-	resp, err := t.client.sess.Delete("%s/%s", t.client.endpoint, itemID).Do()
+	resp, err := t.client.sess.Delete("%s/%s", t.client.endpoint, itemID).
+		Header(echo.HeaderAuthorization, t.client.keyHeader).
+		Do()
 	if err != nil {
 		return errors.Wrapf(err, "delete")
 	}

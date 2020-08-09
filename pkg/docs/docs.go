@@ -27,6 +27,11 @@ var doc = `{
     "paths": {
         "/": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "list todo item",
                 "tags": [
                     "todo"
@@ -41,10 +46,21 @@ var doc = `{
                                 "$ref": "#/definitions/models.Item"
                             }
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
+                        }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "do ping",
                 "consumes": [
                     "application/json"
@@ -79,12 +95,23 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/todo.HTTPError"
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
+                        }
                     }
                 }
             }
         },
         "/{item_id}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "get todo item",
                 "tags": [
                     "todo"
@@ -106,6 +133,12 @@ var doc = `{
                             "$ref": "#/definitions/models.Item"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -115,6 +148,11 @@ var doc = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "update todo item",
                 "tags": [
                     "todo"
@@ -151,6 +189,12 @@ var doc = `{
                             "$ref": "#/definitions/todo.HTTPError"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -160,6 +204,11 @@ var doc = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "delete todo item",
                 "tags": [
                     "todo"
@@ -179,6 +228,12 @@ var doc = `{
                         "description": "No Content",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/todo.HTTPError"
                         }
                     },
                     "404": {
@@ -224,6 +279,13 @@ var doc = `{
                     "example": "do something in future"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

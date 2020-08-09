@@ -41,6 +41,12 @@ paths:
             items:
               $ref: '#/definitions/models.Item'
             type: array
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
       summary: list todo item
       tags:
       - todo
@@ -66,6 +72,12 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/todo.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
       summary: create todo item
       tags:
       - todo
@@ -83,10 +95,16 @@ paths:
           description: No Content
           schema:
             type: string
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
       summary: delete todo item
       tags:
       - todo
@@ -103,10 +121,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Item'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
       summary: get todo item
       tags:
       - todo
@@ -133,11 +157,22 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/todo.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
       summary: update todo item
       tags:
       - todo
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

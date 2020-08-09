@@ -9,6 +9,24 @@ import (
 	"github.com/whitekid/go-utils/fixtures"
 )
 
+func storageFixture(callbacks ...func(Interface)) func() {
+	var dir string
+	defer fixtures.TempDir("testdb", "test_", func(tempDir string) { dir = tempDir })()
+
+	s, err := New(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, callback := range callbacks {
+		callback(s)
+	}
+
+	return func() {
+		defer s.Close()
+	}
+}
+
 func TestBadger(t *testing.T) {
 	var dir string
 	defer fixtures.TempDir(".", "testdb_", func(tempDir string) { dir = tempDir })()
@@ -18,31 +36,44 @@ func TestBadger(t *testing.T) {
 	require.NoError(t, err)
 
 	todos := s.TodoService()
+	tokens := s.TokenService()
+
+	email := "whitekid@gmail.com"
+
+	accessToken, err := tokens.Create(email)
+	require.NoError(t, err)
+	require.Equal(t, email, accessToken.Email)
+
+	{
+		got, err := tokens.Get(accessToken.Token)
+		require.NoError(t, err)
+		require.Equal(t, got.Email, email)
+	}
 
 	item := TodoItem{
 		ID:    uuid.New().String(),
 		Title: "title",
 	}
-	require.NoError(t, todos.Create(&item))
+	require.NoError(t, todos.Create(email, &item))
 
-	items, err := todos.List()
+	items, err := todos.List(email)
 	require.NoError(t, err)
 	require.Equal(t, []TodoItem{item}, items)
 
-	got, err := todos.Get(item.ID)
+	got, err := todos.Get(email, item.ID)
 	require.NoError(t, err)
 	require.Equal(t, &item, got)
 
 	got.Title = "updated"
-	require.NoError(t, todos.Update(got))
+	require.NoError(t, todos.Update(email, got))
 
-	require.NoError(t, todos.Delete(got.ID))
-	if _, err := todos.Get(item.ID); err == nil {
+	require.NoError(t, todos.Delete(email, got.ID))
+	if _, err := todos.Get(email, item.ID); err == nil {
 		require.Fail(t, "should error", "want = %v, got = %v", ErrNotFound, err)
 	}
 
 	{
-		items, err := todos.List()
+		items, err := todos.List(email)
 		require.NoError(t, err)
 		require.Equal(t, 0, len(items))
 	}
