@@ -9,10 +9,13 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
+	"github.com/whitekid/go-todo/pkg/config"
 	. "github.com/whitekid/go-todo/pkg/handlers/types"
 	"github.com/whitekid/go-todo/pkg/storage"
+	"github.com/whitekid/go-todo/pkg/tokens"
 	. "github.com/whitekid/go-todo/pkg/types"
 	"github.com/whitekid/go-todo/pkg/utils"
+	log "github.com/whitekid/go-utils/logging"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -121,10 +124,26 @@ func (g *googleOAuthHandler) handleCallback(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	accessToken, err := g.storage.TokenService().Create(user.Email)
+	refreshToken, err := tokens.New(user.Email, config.RefreshTokenDuration())
 	if err != nil {
+		log.Errorf("fail to generate refresh token: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return c.String(http.StatusOK, accessToken.Token)
+	err = g.storage.TokenService().Create(user.Email, refreshToken)
+	if err != nil {
+		log.Errorf("fail to create refresh token: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	accessToken, err := tokens.New(user.Email, config.AccessTokenDuratin())
+	if err != nil {
+		log.Errorf("fail to generate access token: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"refresh_token": refreshToken,
+		"access_token":  accessToken,
+	})
 }

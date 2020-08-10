@@ -24,6 +24,26 @@ type DB struct {
 	*badger.DB
 }
 
+func (db *DB) GetString(key string) (value string, err error) {
+	if err := db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(key))
+		if err != nil {
+			return err
+		}
+
+		if err := item.Value(func(val []byte) error {
+			value = string(val)
+			return nil
+		}); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return "", err
+	}
+	return value, nil
+}
+
 func (db *DB) GetJSON(key string, data interface{}) error {
 	if err := db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
@@ -40,6 +60,20 @@ func (db *DB) GetJSON(key string, data interface{}) error {
 	}); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (db *DB) SetString(key string, s string) error {
+	if err := db.Update(func(txn *badger.Txn) error {
+		if err := txn.Set([]byte(key), []byte(s)); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
 

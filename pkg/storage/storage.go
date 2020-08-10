@@ -17,7 +17,6 @@ var (
 type (
 	Interface   = types.Interface
 	TodoStorage = types.TodoService
-	AccessToken = types.AccessToken
 	User        = types.User
 
 	TodoItem = types.TodoItem

@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/pkg/errors"
 	badgerx "github.com/whitekid/go-todo/pkg/storage/badger/badger"
 	. "github.com/whitekid/go-todo/pkg/storage/types"
-	"github.com/whitekid/go-todo/pkg/utils"
+	"github.com/whitekid/go-todo/pkg/tokens"
 	log "github.com/whitekid/go-utils/logging"
 )
 
@@ -146,22 +145,24 @@ func (s *badgerStorage) handleUpdates() {
 	go func() {
 		for email := range s.userDeleteCh {
 			// delete user token
-			tokens := []string{}
+			tokensToDelete := []string{}
 
-			s.db.Iter("/access_tokens/", func(key string, value []byte) error {
-				var token AccessToken
-				if err := json.Unmarshal(value, &token); err != nil {
-					return err
+			s.db.Iter("/tokens/", func(key string, value []byte) error {
+				issuer, err := tokens.Parse(string(value))
+				if err != nil {
+					tokensToDelete = append(tokensToDelete, string(value))
+					return nil
 				}
 
-				if *email == token.Email {
-					tokens = append(tokens, token.Token)
+				if *email == issuer {
+					tokensToDelete = append(tokensToDelete, string(value))
+					return nil
 				}
 
 				return nil
 			})
 
-			for _, t := range tokens {
+			for _, t := range tokensToDelete {
 				s.tokenService.Delete(t)
 			}
 
@@ -206,13 +207,13 @@ func (s *badgerStorage) handleUpdates() {
 }
 
 //
-// /access_tokens/{access_token} --> AccessToken object
+// /tokens/{refresh_tokens} --> RefreshToken object
 //
 type badgerTokenService struct {
 	storage *badgerStorage
 }
 
-func (s *badgerTokenService) Create(email string) (*AccessToken, error) {
+func (s *badgerTokenService) Create(email, refreshToken string) error {
 	// check if user exists
 	user, err := s.storage.userService.Get(email)
 	if err != nil {
@@ -222,36 +223,37 @@ func (s *badgerTokenService) Create(email string) (*AccessToken, error) {
 			}
 
 			if err := s.storage.userService.Create(user); err != nil {
-				return nil, err
+				return err
 			}
 		} else {
-			return nil, err
+			return err
 		}
 	}
 
 	// create token
-	token := &AccessToken{
-		Email:  user.Email,
-		Token:  utils.RandomString(40),
-		Expire: time.Now().UTC().AddDate(0, 0, 1),
-	}
-	if err := s.storage.db.SetJSON(fmt.Sprintf("/access_tokens/%s", token.Token), token); err != nil {
-		return nil, err
+	if err := s.storage.db.SetString(fmt.Sprintf("/tokens/%s", refreshToken), refreshToken); err != nil {
+		return err
 	}
 
-	return token, nil
+	return nil
 }
 
-func (s *badgerTokenService) Get(token string) (*AccessToken, error) {
-	var accessToken AccessToken
-	if err := s.storage.db.GetJSON(fmt.Sprintf("/access_tokens/%s", token), &accessToken); err != nil {
-		return nil, err
+func (s *badgerTokenService) Get(token string) (string, error) {
+	t, err := s.storage.db.GetString(fmt.Sprintf("/tokens/%s", token))
+	if err != nil {
+		return "", err
 	}
-	return &accessToken, nil
+
+	if t != token {
+		log.Error("token key and data mismatch: key=%s, token=%s", token, t)
+		return "", errors.New("token missmatch")
+	}
+
+	return t, nil
 }
 
 func (s *badgerTokenService) Delete(token string) error {
-	if err := s.storage.db.Delete(fmt.Sprintf("/access_tokens/%s", token)); err != nil {
+	if err := s.storage.db.Delete(fmt.Sprintf("/tokens/%s", token)); err != nil {
 		return err
 	}
 

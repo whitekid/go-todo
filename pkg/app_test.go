@@ -6,29 +6,32 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/whitekid/go-todo/pkg/client"
+	"github.com/whitekid/go-todo/pkg/config"
 	"github.com/whitekid/go-todo/pkg/models"
+	"github.com/whitekid/go-todo/pkg/tokens"
 	"github.com/whitekid/go-todo/pkg/utils"
 )
 
-func newTestServer() (*httptest.Server, string, func()) {
+func newTestServer(t *testing.T) (*httptest.Server, string, func()) {
 	s := New().(*todoService)
 	e := s.setupRoute()
 
 	email := utils.RandomString(5) + "@domain.com"
-	t, err := s.storage.TokenService().Create(email)
-	if err != nil {
-		panic(err)
-	}
+	refreshToken, err := tokens.New(email, config.RefreshTokenDuration())
+	require.NoError(t, err)
+	require.NoError(t, s.storage.TokenService().Create(email, refreshToken))
+	accessToken, err := tokens.New(email, config.AccessTokenDuratin())
+	require.NoError(t, err)
 
 	ts := httptest.NewServer(e)
-	return ts, t.Token, func() {
+	return ts, accessToken, func() {
 		s.storage.UserService().Delete(email)
 		ts.Close()
 	}
 }
 
 func TestTodo(t *testing.T) {
-	ts, token, teardown := newTestServer()
+	ts, token, teardown := newTestServer(t)
 	defer teardown()
 
 	item := models.Item{
@@ -111,13 +114,13 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts, token, teardown := newTestServer()
+			ts, token, teardown := newTestServer(t)
 			defer teardown()
 			api := client.New(ts.URL, token)
 
 			created, err := api.Todos.Create(&tt.args.item)
 			if (err != nil) != tt.wantErr {
-				require.Failf(t, `doSomething() failed`, `error = %v, wantErr = %v`, err, tt.wantErr)
+				require.Failf(t, `create() failed`, `error = %v, wantErr = %v`, err, tt.wantErr)
 			}
 
 			require.NotEqual(t, "", created.ID)
@@ -131,6 +134,8 @@ func TestCreate(t *testing.T) {
 			items, err := api.Todos.List()
 			require.NoError(t, err)
 			require.Equal(t, 1, len(items))
+
+			require.NoError(t, api.Todos.Delete(created.ID))
 		})
 	}
 }
@@ -147,7 +152,7 @@ func TestList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts, token, teardown := newTestServer()
+			ts, token, teardown := newTestServer(t)
 			defer teardown()
 			api := client.New(ts.URL, token)
 
@@ -173,7 +178,7 @@ func TestUpdate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts, token, teardown := newTestServer()
+			ts, token, teardown := newTestServer(t)
 			defer teardown()
 			api := client.New(ts.URL, token)
 

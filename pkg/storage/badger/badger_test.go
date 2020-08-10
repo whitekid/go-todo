@@ -40,12 +40,12 @@ func TestBadger(t *testing.T) {
 
 	email := "whitekid@gmail.com"
 
-	accessToken, err := tokens.Create(email)
+	refreshToken, err := tokens.Create(email)
 	require.NoError(t, err)
-	require.Equal(t, email, accessToken.Email)
+	require.Equal(t, email, refreshToken.Email)
 
 	{
-		got, err := tokens.Get(accessToken.Token)
+		got, err := tokens.Get(refreshToken.Token)
 		require.NoError(t, err)
 		require.Equal(t, got.Email, email)
 	}

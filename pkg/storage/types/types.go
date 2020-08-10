@@ -31,9 +31,11 @@ type UserService interface {
 	Delete(email string) error
 }
 
+// TokenService storage refresh token service,
+// Token should be JWT token
 type TokenService interface {
-	Create(email string) (*AccessToken, error)
-	Get(token string) (*AccessToken, error)
+	Create(email string, refreshToken string) error
+	Get(token string) (string, error)
 	Delete(token string) error
 }
 
@@ -55,12 +57,6 @@ type TodoService interface {
 // User user informations
 type User struct {
 	Email string `json:"email"`
-}
-
-type AccessToken struct {
-	Token  string    `json:"token"`
-	Email  string    `json:"email"`
-	Expire time.Time `json:"time"`
 }
 
 // TodoItem todo item

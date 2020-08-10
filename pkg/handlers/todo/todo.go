@@ -3,14 +3,15 @@ package todo
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/pkg/errors"
 	. "github.com/whitekid/go-todo/pkg/handlers/types"
 	"github.com/whitekid/go-todo/pkg/models"
 	"github.com/whitekid/go-todo/pkg/storage"
+	"github.com/whitekid/go-todo/pkg/tokens"
 	log "github.com/whitekid/go-utils/logging"
 )
 
@@ -32,23 +33,20 @@ func (h *todoHandler) Route(r Router) {
 			return false, echo.NewHTTPError(http.StatusUnauthorized)
 		}
 
-		token, err := h.storage.TokenService().Get(key)
+		email, err := tokens.Parse(key)
 		if err != nil {
-			return false, echo.NewHTTPError(http.StatusForbidden)
+			if _, ok := err.(*tokens.ValidationError); ok {
+				return false, echo.NewHTTPError(http.StatusForbidden, err)
+			}
+			return false, echo.NewHTTPError(http.StatusForbidden, err)
 		}
 
-		if token.Expire.Before(time.Now()) {
-			log.Infof("token expired: %s", key)
-			h.storage.TokenService().Delete(key)
-			return false, echo.NewHTTPError(http.StatusBadRequest)
-		}
-		c.Set("token", token)
-
-		user, err := h.storage.UserService().Get(token.Email)
+		user, err := h.storage.UserService().Get(email)
 		if err != nil {
-			log.Error("token found, but user not found: %+v", token)
-			return false, echo.NewHTTPError(http.StatusForbidden)
+			log.Error("token found, but user not found: %+v", key)
+			return false, echo.NewHTTPError(http.StatusUnauthorized)
 		}
+
 		c.Set("user", user)
 
 		return true, nil
@@ -59,10 +57,6 @@ func (h *todoHandler) Route(r Router) {
 	r.GET("/:item_id", h.handleGet)
 	r.PUT("/:item_id", h.handleUpdate)
 	r.DELETE("/:item_id", h.handleDelete)
-}
-
-func (h *todoHandler) token(c echo.Context) *storage.AccessToken {
-	return c.Get("token").(*storage.AccessToken)
 }
 
 func (h *todoHandler) user(c echo.Context) *storage.User {
@@ -95,8 +89,8 @@ func (h *todoHandler) handleCreate(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err := h.storage.TodoService().Create(h.token(c).Email, &item); err != nil {
-		return err
+	if err := h.storage.TodoService().Create(h.user(c).Email, &item); err != nil {
+		return errors.Wrapf(err, "todo create failed: %s", err)
 	}
 
 	return c.JSON(http.StatusCreated, &item)
@@ -111,7 +105,7 @@ func (h *todoHandler) handleCreate(c echo.Context) error {
 // @router / [get]
 // @Security ApiKeyAuth
 func (h *todoHandler) handleList(c echo.Context) error {
-	items, err := h.storage.TodoService().List(h.token(c).Email)
+	items, err := h.storage.TodoService().List(h.user(c).Email)
 	if err != nil && err == storage.ErrNotAuthenticated {
 		return echo.NewHTTPError(http.StatusForbidden, err)
 	}
@@ -134,7 +128,7 @@ func (h *todoHandler) handleGet(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
-	item, err := h.storage.TodoService().Get(h.token(c).Email, itemID)
+	item, err := h.storage.TodoService().Get(h.user(c).Email, itemID)
 	if err != nil {
 		switch err {
 		case storage.ErrNotFound:
@@ -179,7 +173,7 @@ func (h *todoHandler) handleUpdate(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err := h.storage.TodoService().Update(h.token(c).Email, &item); err != nil {
+	if err := h.storage.TodoService().Update(h.user(c).Email, &item); err != nil {
 		switch err {
 		case storage.ErrNotFound:
 			return echo.NewHTTPError(http.StatusNotFound)
@@ -209,7 +203,7 @@ func (h *todoHandler) handleDelete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 
-	if err := h.storage.TodoService().Delete(h.token(c).Email, itemID); err != nil {
+	if err := h.storage.TodoService().Delete(h.user(c).Email, itemID); err != nil {
 		switch err {
 		case storage.ErrNotFound:
 			return echo.NewHTTPError(http.StatusNotFound)
