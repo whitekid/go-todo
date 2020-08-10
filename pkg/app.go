@@ -3,7 +3,6 @@ package todo
 //go:generate swag init -g app.go
 import (
 	"context"
-	"log"
 	"os"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/whitekid/go-todo/pkg/handlers/todo"
 	"github.com/whitekid/go-todo/pkg/storage"
 	. "github.com/whitekid/go-todo/pkg/types"
+	log "github.com/whitekid/go-utils/logging"
 	"github.com/whitekid/go-utils/service"
 )
 
@@ -81,7 +81,7 @@ func (s *todoService) setupRoute() *echo.Echo {
 	})
 
 	todo.New(s.storage).Route(e.Group(""))
-	auth.New().Route(e.Group("/auth"))
+	auth.New(s.storage).Route(e.Group("/auth"))
 	oauth.New(s.storage, oauth.Options{
 		ClientID:     os.Getenv("TODO_CLIENT_ID"),
 		ClientSecret: os.Getenv("TODO_CLIENT_SECRET"),

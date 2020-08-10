@@ -2,11 +2,9 @@ package todo
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
 	. "github.com/whitekid/go-todo/pkg/handlers/types"
 	"github.com/whitekid/go-todo/pkg/models"
@@ -27,30 +25,7 @@ type todoHandler struct {
 }
 
 func (h *todoHandler) Route(r Router) {
-	r.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
-		key = strings.TrimSpace(key)
-		if key == "" {
-			return false, echo.NewHTTPError(http.StatusUnauthorized)
-		}
-
-		email, err := tokens.Parse(key)
-		if err != nil {
-			if _, ok := err.(*tokens.ValidationError); ok {
-				return false, echo.NewHTTPError(http.StatusForbidden, err)
-			}
-			return false, echo.NewHTTPError(http.StatusForbidden, err)
-		}
-
-		user, err := h.storage.UserService().Get(email)
-		if err != nil {
-			log.Error("token found, but user not found: %+v", key)
-			return false, echo.NewHTTPError(http.StatusUnauthorized)
-		}
-
-		c.Set("user", user)
-
-		return true, nil
-	}))
+	r.Use(tokens.TokenMiddleware(h.storage, false))
 
 	r.POST("/", h.handleCreate)
 	r.GET("/", h.handleList)
