@@ -3,39 +3,61 @@ package config
 import (
 	"time"
 
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	log "github.com/whitekid/go-utils/logging"
 )
 
-const (
-	DefaultStorage = "badger"
-
-	KeyStorage              = "storage"
-	KeyTokenKey             = "signkey"
-	KeyRefreshTokenDuration = "refresh_token_duration"
-	KeyAccessTokenDuration  = "access_token_duration"
-)
+// NOTE 각 파일에 별도로 분리하면 더 깔끔하겠지만, init()의 호출 순서 때문에 문제가 발행함
+var configs = map[string][]struct {
+	key          string
+	short        string
+	defaultValue interface{}
+	description  string
+}{
+	"todo": {
+		{keyStorage, "s", "badger", "todo storage type"},
+		{keyClientID, "", "your-client-id", "google auth client id"},
+		{keyClientSecret, "", "your-client-secret", "google auth client secret"},
+		{keyRootURL, "u", "http://127.0.0.1", "application root url"},
+		{keyCallbackURL, "", "/oauth/callback", "oauth callback url"},
+		{teyTokenSigningKey, "", []byte("signing-key"), "jwt token signing key"},
+		{keyRefreshTokenDuration, "", time.Hour * 24 * 14, "refresh token duration"}, // refresh token expires in 2 weeks
+		{keyAccessTokenDuration, "", time.Minute * 30, "access token duration"},      // access token expires in 30 mins
+	},
+	"hello": {
+		{"world", "w", "world", "saying hello world"},
+	},
+}
 
 func init() {
-	viper.SetDefault(KeyStorage, DefaultStorage)
-	viper.SetDefault(KeyTokenKey, "9b768518-f780-44fd-9784-7481b7be2a4e")
-	viper.SetDefault(KeyRefreshTokenDuration, time.Hour*24*14) // refresh token expires in 2 weeks
-	viper.SetDefault(KeyAccessTokenDuration, time.Minute*30)   // access token expires in 30 mins
+	InitDefaults()
 }
 
-// Storage default storage
-func Storage() string {
-	return viper.GetString(KeyStorage)
+// InitDefaults initialize config
+func InitDefaults() {
+	for use := range configs {
+		for _, config := range configs[use] {
+			if config.defaultValue != nil {
+				viper.SetDefault(config.key, config.defaultValue)
+			}
+		}
+	}
 }
 
-// TokenKey key used in jwt key
-func TokenKey() []byte {
-	return []byte(viper.GetString(KeyTokenKey))
-}
-
-func RefreshTokenDuration() time.Duration {
-	return viper.GetDuration(KeyRefreshTokenDuration)
-}
-
-func AccessTokenDuratin() time.Duration {
-	return viper.GetDuration(KeyAccessTokenDuration)
+// InitFlagSet cobra.Command와 연결
+func InitFlagSet(use string, fs *pflag.FlagSet) {
+	for _, config := range configs[use] {
+		switch v := config.defaultValue.(type) {
+		case string:
+			fs.StringP(config.key, config.short, v, config.description)
+		case time.Duration:
+			fs.DurationP(config.key, config.short, v, config.description)
+		case []byte:
+			fs.BytesHexP(config.key, config.short, v, config.description)
+		default:
+			log.Errorf("unsupported type %T", config.defaultValue)
+		}
+		viper.BindPFlag(config.key, fs.Lookup(config.key))
+	}
 }

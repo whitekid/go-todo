@@ -10,7 +10,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "todo",
+	Use:   "todo",
+	Short: "run todo service",
+	Long:  "run todo service",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return todo.New().Serve(context.TODO(), args...)
 	},
@@ -19,10 +21,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	fs := rootCmd.Flags()
-
-	fs.StringP(config.KeyStorage, "s", config.DefaultStorage, "todo storage")
-	viper.BindPFlag(config.KeyStorage, fs.Lookup(config.KeyStorage))
+	config.InitFlagSet(rootCmd.Use, rootCmd.Flags())
 }
 
 func initConfig() {

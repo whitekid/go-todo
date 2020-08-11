@@ -9,7 +9,7 @@ import (
 	"github.com/whitekid/go-todo/pkg/config"
 	"github.com/whitekid/go-todo/pkg/models"
 	"github.com/whitekid/go-todo/pkg/tokens"
-	"github.com/whitekid/go-todo/pkg/utils"
+	"github.com/whitekid/go-utils"
 )
 
 func newTestServer(t *testing.T) (*httptest.Server, string, func()) {
@@ -20,7 +20,7 @@ func newTestServer(t *testing.T) (*httptest.Server, string, func()) {
 	refreshToken, err := tokens.New(email, config.RefreshTokenDuration())
 	require.NoError(t, err)
 	require.NoError(t, s.storage.TokenService().Create(email, refreshToken))
-	accessToken, err := tokens.New(email, config.AccessTokenDuratin())
+	accessToken, err := tokens.New(email, config.AccessTokenDuration())
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(e)
@@ -45,7 +45,7 @@ func TestTodo(t *testing.T) {
 	// create
 	var created *models.Item
 	{
-		item, err := api.Todos.Create(&item)
+		item, err := api.TodoService().Create(&item)
 		require.NoError(t, err)
 
 		created = item
@@ -56,7 +56,7 @@ func TestTodo(t *testing.T) {
 
 	// list
 	{
-		items, err := api.Todos.List()
+		items, err := api.TodoService().List()
 		require.NoError(t, err)
 
 		require.Equal(t, 1, len(items), "item created but got %d items", len(items))
@@ -65,7 +65,7 @@ func TestTodo(t *testing.T) {
 
 	// get
 	{
-		item, err := api.Todos.Get(created.ID)
+		item, err := api.TodoService().Get(created.ID)
 		require.NoError(t, err)
 
 		require.Equal(t, created, item)
@@ -76,11 +76,11 @@ func TestTodo(t *testing.T) {
 		item := created
 		item.Title = "updated title"
 
-		updated, err := api.Todos.Update(item)
+		updated, err := api.TodoService().Update(item)
 		require.NoError(t, err)
 		require.Equal(t, updated, item)
 
-		reterived, err := api.Todos.Get(updated.ID)
+		reterived, err := api.TodoService().Get(updated.ID)
 		require.NoError(t, err)
 
 		require.Equal(t, updated, reterived)
@@ -88,12 +88,12 @@ func TestTodo(t *testing.T) {
 
 	// delete
 	{
-		require.NoError(t, api.Todos.Delete(created.ID))
+		require.NoError(t, api.TodoService().Delete(created.ID))
 
-		_, err := api.Todos.Get(created.ID)
+		_, err := api.TodoService().Get(created.ID)
 		require.Error(t, err)
 
-		items, err := api.Todos.List()
+		items, err := api.TodoService().List()
 		require.NoError(t, err)
 		require.Equal(t, 0, len(items), "item deleted but got %d items", len(items))
 	}
@@ -118,7 +118,7 @@ func TestCreate(t *testing.T) {
 			defer teardown()
 			api := client.New(ts.URL, token)
 
-			created, err := api.Todos.Create(&tt.args.item)
+			created, err := api.TodoService().Create(&tt.args.item)
 			if (err != nil) != tt.wantErr {
 				require.Failf(t, `create() failed`, `error = %v, wantErr = %v`, err, tt.wantErr)
 			}
@@ -127,15 +127,15 @@ func TestCreate(t *testing.T) {
 			tt.args.item.ID = created.ID
 			require.Equal(t, &tt.args.item, created)
 
-			got, err := api.Todos.Get(created.ID)
+			got, err := api.TodoService().Get(created.ID)
 			require.NoError(t, err)
 			require.Equal(t, created, got)
 
-			items, err := api.Todos.List()
+			items, err := api.TodoService().List()
 			require.NoError(t, err)
 			require.Equal(t, 1, len(items))
 
-			require.NoError(t, api.Todos.Delete(created.ID))
+			require.NoError(t, api.TodoService().Delete(created.ID))
 		})
 	}
 }
@@ -156,7 +156,7 @@ func TestList(t *testing.T) {
 			defer teardown()
 			api := client.New(ts.URL, token)
 
-			got, err := api.Todos.List()
+			got, err := api.TodoService().List()
 			if (err != nil) != tt.wantErr {
 				require.Failf(t, `List() failed`, `error = %v, wantErr = %v`, err, tt.wantErr)
 			}
@@ -182,11 +182,11 @@ func TestUpdate(t *testing.T) {
 			defer teardown()
 			api := client.New(ts.URL, token)
 
-			created, err := api.Todos.Create(&tt.args.item)
+			created, err := api.TodoService().Create(&tt.args.item)
 			require.NoError(t, err)
 
 			created.Title = "updated " + created.Title
-			got, err := api.Todos.Update(created)
+			got, err := api.TodoService().Update(created)
 			if (err != nil) != tt.wantErr {
 				require.Failf(t, `update() failed`, `error = %v, wantErr = %v`, err, tt.wantErr)
 			}

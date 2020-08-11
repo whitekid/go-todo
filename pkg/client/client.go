@@ -7,34 +7,53 @@ import (
 	"github.com/whitekid/go-utils/request"
 )
 
+// Interface represents client interface
+type Interface interface {
+	TodoService() TodoService
+}
+
+// TodoService ...
+type TodoService interface {
+	Create(item *models.Item) (*models.Item, error)
+	List() ([]models.Item, error)
+	Get(itemID string) (*models.Item, error)
+	Update(item *models.Item) (*models.Item, error)
+	Delete(itemID string) error
+}
+
 // New create new client
-func New(endpoint string, key string) *Client {
-	client := &Client{
+// TODO refresh/ access token 가능 추가
+func New(endpoint string, key string) Interface {
+	client := &clientImpl{
 		endpoint:  endpoint,
 		sess:      request.NewSession(nil),
 		keyHeader: "Bearer " + key,
 	}
 
-	client.Todos = &Todos{client: client}
+	client.todos = &todoImpl{client: client}
 
 	return client
 }
 
 // Client todo item client
-type Client struct {
+type clientImpl struct {
 	endpoint  string
 	sess      request.Interface
 	keyHeader string
 
-	Todos *Todos
+	todos *todoImpl
 }
 
-// Todos todo api
-type Todos struct {
-	client *Client
+func (c *clientImpl) TodoService() TodoService {
+	return c.todos
 }
 
-func (t *Todos) Create(item *models.Item) (*models.Item, error) {
+// todoImpl todo api
+type todoImpl struct {
+	client *clientImpl
+}
+
+func (t *todoImpl) Create(item *models.Item) (*models.Item, error) {
 	resp, err := t.client.sess.Post(t.client.endpoint).
 		Header(echo.HeaderAuthorization, t.client.keyHeader).
 		JSON(item).Do()
@@ -57,7 +76,7 @@ func (t *Todos) Create(item *models.Item) (*models.Item, error) {
 }
 
 // List list todo item
-func (t *Todos) List() ([]models.Item, error) {
+func (t *todoImpl) List() ([]models.Item, error) {
 	resp, err := t.client.sess.Get("%s", t.client.endpoint).
 		Header(echo.HeaderAuthorization, t.client.keyHeader).
 		Do()
@@ -79,7 +98,7 @@ func (t *Todos) List() ([]models.Item, error) {
 }
 
 // Get get todo item
-func (t *Todos) Get(itemID string) (*models.Item, error) {
+func (t *todoImpl) Get(itemID string) (*models.Item, error) {
 	resp, err := t.client.sess.Get("%s/%s", t.client.endpoint, itemID).
 		Header(echo.HeaderAuthorization, t.client.keyHeader).
 		Do()
@@ -101,7 +120,7 @@ func (t *Todos) Get(itemID string) (*models.Item, error) {
 }
 
 // Update update todo item
-func (t *Todos) Update(item *models.Item) (*models.Item, error) {
+func (t *todoImpl) Update(item *models.Item) (*models.Item, error) {
 	resp, err := t.client.sess.Put("%s/%s", t.client.endpoint, item.ID).
 		Header(echo.HeaderAuthorization, t.client.keyHeader).
 		JSON(item).
@@ -124,7 +143,7 @@ func (t *Todos) Update(item *models.Item) (*models.Item, error) {
 }
 
 // Delete delete todo item
-func (t *Todos) Delete(itemID string) error {
+func (t *todoImpl) Delete(itemID string) error {
 	resp, err := t.client.sess.Delete("%s/%s", t.client.endpoint, itemID).
 		Header(echo.HeaderAuthorization, t.client.keyHeader).
 		Do()

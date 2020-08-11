@@ -26,7 +26,7 @@ func New(issuer string, duration time.Duration) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ss, err := token.SignedString(config.TokenKey())
+	ss, err := token.SignedString(config.TokenSignKey())
 	if err != nil {
 		return "", err
 	}
@@ -40,7 +40,7 @@ func Parse(s string) (string, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return config.TokenKey(), nil
+		return config.TokenSignKey(), nil
 	})
 	if err != nil {
 		return "", err

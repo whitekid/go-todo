@@ -57,7 +57,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: do ping
+      description: create todo item
       parameters:
       - description: todo item
         in: body
@@ -89,6 +89,22 @@ paths:
       summary: create todo item
       tags:
       - todo
+    put:
+      description: refresh token can be obtain /oauth with google authentication
+      responses:
+        "200":
+          description: access token
+          headers:
+            Authorization:
+              description: the new access token
+              type: string
+        "401": {}
+        "403": {}
+      security:
+      - ApiKeyAuth: []
+      summary: refresh access token using refresh token
+      tags:
+      - auth
   /{item_id}:
     delete:
       description: delete todo item

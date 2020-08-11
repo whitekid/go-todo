@@ -17,6 +17,7 @@ func TestAuth(t *testing.T) {
 
 	storage, err := storage.New("testdb") // TODO mock storage object
 	require.NoError(t, err)
+	defer storage.Close()
 	handler := New(storage)
 	handler.Route(e)
 
@@ -29,7 +30,8 @@ func TestAuth(t *testing.T) {
 
 	require.NoError(t, storage.TokenService().Create(email, token))
 
-	resp, err := request.Post("%s/tokens", ts.URL).Header(echo.HeaderAuthorization, "Bearer "+token).Do()
+	resp, err := request.Put("%s/tokens", ts.URL).Header(echo.HeaderAuthorization, "Bearer "+token).Do()
 	require.NoError(t, err)
 	require.True(t, resp.Success(), "failed with status %d", resp.StatusCode)
+	require.Equal(t, token, resp.Header.Get(echo.HeaderAuthorization))
 }

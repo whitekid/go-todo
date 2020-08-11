@@ -45,13 +45,38 @@
                     }
                 }
             },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "refresh token can be obtain /oauth with google authentication",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "refresh access token using refresh token",
+                "responses": {
+                    "200": {
+                        "description": "access token",
+                        "headers": {
+                            "Authorization": {
+                                "type": "string",
+                                "description": "the new access token"
+                            }
+                        }
+                    },
+                    "401": {},
+                    "403": {}
+                }
+            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "do ping",
+                "description": "create todo item",
                 "consumes": [
                     "application/json"
                 ],

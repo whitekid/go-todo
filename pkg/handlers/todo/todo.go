@@ -39,7 +39,7 @@ func (h *todoHandler) user(c echo.Context) *storage.User {
 }
 
 // @summary create todo item
-// @description do ping
+// @description create todo item
 // @tags todo
 // @accept json
 // @produce json

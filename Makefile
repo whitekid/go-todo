@@ -1,4 +1,4 @@
-TARGET=bin/go-todo
+TARGET=bin/todo
 SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -path "*_test.go")
 BUILD_FLAGS?=-v
 

@@ -14,7 +14,7 @@ import (
 	"github.com/whitekid/go-todo/pkg/storage"
 	"github.com/whitekid/go-todo/pkg/tokens"
 	. "github.com/whitekid/go-todo/pkg/types"
-	"github.com/whitekid/go-todo/pkg/utils"
+	"github.com/whitekid/go-utils"
 	log "github.com/whitekid/go-utils/logging"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -136,7 +136,7 @@ func (g *googleOAuthHandler) handleCallback(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	accessToken, err := tokens.New(user.Email, config.AccessTokenDuratin())
+	accessToken, err := tokens.New(user.Email, config.AccessTokenDuration())
 	if err != nil {
 		log.Errorf("fail to generate access token: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err)

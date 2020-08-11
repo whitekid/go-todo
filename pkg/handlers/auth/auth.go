@@ -22,11 +22,19 @@ type authHandler struct {
 }
 
 func (h *authHandler) Route(r Router) {
-	r.POST("/tokens", h.handleTokenRefresh, tokens.TokenMiddleware(h.storage, true))
+	r.PUT("/tokens", h.handleTokenRefresh, tokens.TokenMiddleware(h.storage, true))
 }
 
 // refresh access token from refresh token
-// TODO write swagger spec
+// @summary refresh access token using refresh token
+// @description refresh token can be obtain /oauth with google authentication
+// @tags auth
+// @success 200 "access token"
+// @header 200 {string} Authorization "the new access token"
+// @failure 401
+// @failure 403
+// @router / [put]
+// @security ApiKeyAuth
 func (h *authHandler) handleTokenRefresh(c echo.Context) error {
 	email := c.Get("user").(*storage.User).Email
 	token, err := tokens.New(email, config.RefreshTokenDuration())
@@ -38,5 +46,6 @@ func (h *authHandler) handleTokenRefresh(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return c.String(http.StatusOK, token)
+	c.Response().Header().Set(echo.HeaderAuthorization, token)
+	return c.NoContent(http.StatusOK)
 }

@@ -1,5 +1,7 @@
 package storage
 
+//go:generate mockgen -destination=mocks/mocks.go . Interface
+
 import (
 	"github.com/pkg/errors"
 	"github.com/whitekid/go-todo/pkg/config"
@@ -22,7 +24,8 @@ type (
 	TodoItem = types.TodoItem
 )
 
-var storages = map[string]Factory{
+// storage factories
+var storages = map[string]factoryFunc{
 	badger.Name: func(name string) Interface {
 		intf, err := badger.New(name)
 		if err != nil {
@@ -32,12 +35,12 @@ var storages = map[string]Factory{
 	},
 }
 
-type Factory func(name string) Interface
+type factoryFunc func(name string) Interface
 
 func New(name string) (Interface, error) {
 	factory, ok := storages[config.Storage()]
 	if !ok {
-		return nil, errors.Errorf(`unknown storage: "%s"`, config.Storage())
+		return nil, errors.Errorf(`unknown storage type: "%s"`, config.Storage())
 	}
 
 	return factory(name), nil
