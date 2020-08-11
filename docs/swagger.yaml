@@ -1,0 +1,214 @@
+basePath: /
+definitions:
+  models.Item:
+    $ref: '#/definitions/storage.TodoItem'
+  storage.TodoItem:
+    $ref: '#/definitions/types.TodoItem'
+  todo.HTTPError:
+    $ref: '#/definitions/echo.HTTPError'
+  types.TodoItem:
+    properties:
+      due_date:
+        example: "2006-01-02"
+        type: string
+      id:
+        example: 628b92ab-6d95-4fbe-b7c6-09cf5cd8941c
+        format: uuid
+        type: string
+      rank:
+        description: rank order
+        example: 1
+        format: int
+        type: integer
+      title:
+        example: do something in future
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This is a simple todo API service.
+  license: {}
+  title: TODO API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: list todo item
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Item'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
+      summary: list todo item
+      tags:
+      - todo
+    post:
+      consumes:
+      - application/json
+      description: create todo item
+      parameters:
+      - description: todo item
+        in: body
+        name: todo
+        required: true
+        schema:
+          $ref: '#/definitions/models.Item'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Item'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
+      summary: create todo item
+      tags:
+      - todo
+    put:
+      description: refresh token can be obtain /oauth with google authentication
+      responses:
+        "200":
+          description: access token
+          headers:
+            Authorization:
+              description: the new access token
+              type: string
+        "401": {}
+        "403": {}
+      security:
+      - ApiKeyAuth: []
+      summary: refresh access token using refresh token
+      tags:
+      - auth
+  /{item_id}:
+    delete:
+      description: delete todo item
+      parameters:
+      - description: todo item ID
+        in: path
+        name: item_id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
+      summary: delete todo item
+      tags:
+      - todo
+    get:
+      description: get todo item
+      parameters:
+      - description: todo item ID
+        in: path
+        name: item_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Item'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
+      summary: get todo item
+      tags:
+      - todo
+    put:
+      description: update todo item
+      parameters:
+      - description: todo item ID
+        in: path
+        name: item_id
+        required: true
+        type: string
+      - description: todo item
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/models.Item'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/models.Item'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/todo.HTTPError'
+      security:
+      - ApiKeyAuth: []
+      summary: update todo item
+      tags:
+      - todo
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

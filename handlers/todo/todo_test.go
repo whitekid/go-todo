@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
-	"github.com/whitekid/go-todo/pkg/storage"
+	"github.com/whitekid/go-todo/storage"
 	"github.com/whitekid/go-utils/request"
 )
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/whitekid/go-todo/pkg/config"
+	"github.com/whitekid/go-todo/config"
 )
 
 var helloCmd = &cobra.Command{

@@ -5,7 +5,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
-	"github.com/whitekid/go-todo/pkg/config"
+	"github.com/whitekid/go-todo/config"
 )
 
 var (

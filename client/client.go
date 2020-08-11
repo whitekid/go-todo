@@ -3,7 +3,7 @@ package client
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"github.com/whitekid/go-todo/pkg/models"
+	"github.com/whitekid/go-todo/models"
 	"github.com/whitekid/go-utils/request"
 )
 

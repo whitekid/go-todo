@@ -27,4 +27,4 @@ tidy:
 	go mod tidy
 
 swag:
-	swag init -d pkg -g app.go -o pkg/docs
+	swag init -d . -g app.go -o pkg/docs

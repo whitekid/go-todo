@@ -6,10 +6,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	. "github.com/whitekid/go-todo/pkg/handlers/types"
-	"github.com/whitekid/go-todo/pkg/models"
-	"github.com/whitekid/go-todo/pkg/storage"
-	"github.com/whitekid/go-todo/pkg/tokens"
+	. "github.com/whitekid/go-todo/handlers/types"
+	"github.com/whitekid/go-todo/models"
+	"github.com/whitekid/go-todo/storage"
+	"github.com/whitekid/go-todo/tokens"
 	log "github.com/whitekid/go-utils/logging"
 )
 

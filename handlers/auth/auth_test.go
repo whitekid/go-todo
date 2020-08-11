@@ -6,9 +6,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
-	"github.com/whitekid/go-todo/pkg/config"
-	"github.com/whitekid/go-todo/pkg/storage"
-	"github.com/whitekid/go-todo/pkg/tokens"
+	"github.com/whitekid/go-todo/config"
+	"github.com/whitekid/go-todo/storage"
+	"github.com/whitekid/go-todo/tokens"
 	"github.com/whitekid/go-utils/request"
 )
 

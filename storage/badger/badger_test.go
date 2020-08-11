@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	. "github.com/whitekid/go-todo/pkg/storage/types"
+	. "github.com/whitekid/go-todo/storage/types"
 	"github.com/whitekid/go-utils/fixtures"
 )
 

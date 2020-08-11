@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	storage_types "github.com/whitekid/go-todo/pkg/storage/types"
+	storage_types "github.com/whitekid/go-todo/storage/types"
 	log "github.com/whitekid/go-utils/logging"
 )
 

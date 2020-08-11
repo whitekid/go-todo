@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
-	todo "github.com/whitekid/go-todo/pkg"
-	"github.com/whitekid/go-todo/pkg/config"
+	todo "github.com/whitekid/go-todo"
+	"github.com/whitekid/go-todo/config"
 )
 
 var rootCmd = &cobra.Command{

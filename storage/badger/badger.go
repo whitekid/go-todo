@@ -8,9 +8,9 @@ import (
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/pkg/errors"
-	badgerx "github.com/whitekid/go-todo/pkg/storage/badger/badger"
-	. "github.com/whitekid/go-todo/pkg/storage/types"
-	"github.com/whitekid/go-todo/pkg/tokens"
+	badgerx "github.com/whitekid/go-todo/storage/badger/badger"
+	. "github.com/whitekid/go-todo/storage/types"
+	"github.com/whitekid/go-todo/tokens"
 	log "github.com/whitekid/go-utils/logging"
 )
 

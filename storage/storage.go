@@ -4,9 +4,9 @@ package storage
 
 import (
 	"github.com/pkg/errors"
-	"github.com/whitekid/go-todo/pkg/config"
-	"github.com/whitekid/go-todo/pkg/storage/badger"
-	"github.com/whitekid/go-todo/pkg/storage/types"
+	"github.com/whitekid/go-todo/config"
+	"github.com/whitekid/go-todo/storage/badger"
+	"github.com/whitekid/go-todo/storage/types"
 )
 
 var (

@@ -8,13 +8,13 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
-	"github.com/whitekid/go-todo/pkg/config"
-	_ "github.com/whitekid/go-todo/pkg/docs" // swagger docs
-	"github.com/whitekid/go-todo/pkg/handlers/auth"
-	"github.com/whitekid/go-todo/pkg/handlers/oauth"
-	"github.com/whitekid/go-todo/pkg/handlers/todo"
-	"github.com/whitekid/go-todo/pkg/storage"
-	. "github.com/whitekid/go-todo/pkg/types"
+	"github.com/whitekid/go-todo/config"
+	_ "github.com/whitekid/go-todo/docs" // swagger docs
+	"github.com/whitekid/go-todo/handlers/auth"
+	"github.com/whitekid/go-todo/handlers/oauth"
+	"github.com/whitekid/go-todo/handlers/todo"
+	"github.com/whitekid/go-todo/storage"
+	. "github.com/whitekid/go-todo/types"
 	log "github.com/whitekid/go-utils/logging"
 	"github.com/whitekid/go-utils/service"
 )

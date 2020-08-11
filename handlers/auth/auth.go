@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/whitekid/go-todo/pkg/config"
-	. "github.com/whitekid/go-todo/pkg/handlers/types"
-	"github.com/whitekid/go-todo/pkg/storage"
-	"github.com/whitekid/go-todo/pkg/tokens"
+	"github.com/whitekid/go-todo/config"
+	. "github.com/whitekid/go-todo/handlers/types"
+	"github.com/whitekid/go-todo/storage"
+	"github.com/whitekid/go-todo/tokens"
 )
 
 // New create new auth handler

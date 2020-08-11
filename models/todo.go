@@ -1,6 +1,6 @@
 package models
 
-import "github.com/whitekid/go-todo/pkg/storage"
+import "github.com/whitekid/go-todo/storage"
 
 type Item = storage.TodoItem
 
