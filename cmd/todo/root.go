@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	todo "github.com/whitekid/go-todo/pkg"
 	"github.com/whitekid/go-todo/pkg/config"
 )
@@ -19,12 +18,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(config.InitConfig)
 
 	config.InitFlagSet(rootCmd.Use, rootCmd.Flags())
-}
-
-func initConfig() {
-	viper.SetEnvPrefix("TODO")
-	viper.AutomaticEnv()
 }

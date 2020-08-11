@@ -31,11 +31,7 @@ var configs = map[string][]struct {
 }
 
 func init() {
-	InitDefaults()
-}
-
-// InitDefaults initialize config
-func InitDefaults() {
+	// InitDefaults initialize config
 	for use := range configs {
 		for _, config := range configs[use] {
 			if config.defaultValue != nil {
@@ -43,6 +39,11 @@ func InitDefaults() {
 			}
 		}
 	}
+}
+
+func InitConfig() {
+	viper.SetEnvPrefix("TODO")
+	viper.AutomaticEnv()
 }
 
 // InitFlagSet cobra.Command와 연결
