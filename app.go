@@ -3,6 +3,7 @@ package todo
 //go:generate swag init -g app.go
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -15,7 +16,6 @@ import (
 	"github.com/whitekid/go-todo/handlers/todo"
 	"github.com/whitekid/go-todo/storage"
 	. "github.com/whitekid/go-todo/types"
-	log "github.com/whitekid/go-utils/logging"
 	"github.com/whitekid/go-utils/service"
 )
 

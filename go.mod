@@ -18,6 +18,6 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/swaggo/echo-swagger v1.0.0
 	github.com/swaggo/swag v1.6.7
-	github.com/whitekid/go-utils v0.0.0-20200810012931-249592dc6d62
+	github.com/whitekid/go-utils v0.0.0-20200811062425-1e437d5b9275
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )

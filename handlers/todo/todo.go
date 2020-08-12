@@ -10,7 +10,7 @@ import (
 	"github.com/whitekid/go-todo/models"
 	"github.com/whitekid/go-todo/storage"
 	"github.com/whitekid/go-todo/tokens"
-	log "github.com/whitekid/go-utils/logging"
+	"github.com/whitekid/go-utils/log"
 )
 
 // New create todo handler

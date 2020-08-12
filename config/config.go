@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	log "github.com/whitekid/go-utils/logging"
+	"github.com/whitekid/go-utils/log"
 )
 
 // NOTE 각 파일에 별도로 분리하면 더 깔끔하겠지만, init()의 호출 순서 때문에 문제가 발행함

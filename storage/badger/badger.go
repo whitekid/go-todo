@@ -11,7 +11,7 @@ import (
 	badgerx "github.com/whitekid/go-todo/storage/badger/badger"
 	. "github.com/whitekid/go-todo/storage/types"
 	"github.com/whitekid/go-todo/tokens"
-	log "github.com/whitekid/go-utils/logging"
+	"github.com/whitekid/go-utils/log"
 )
 
 const Name = "badger"

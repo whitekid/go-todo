@@ -15,7 +15,7 @@ import (
 	"github.com/whitekid/go-todo/tokens"
 	. "github.com/whitekid/go-todo/types"
 	"github.com/whitekid/go-utils"
-	log "github.com/whitekid/go-utils/logging"
+	"github.com/whitekid/go-utils/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
