@@ -82,7 +82,7 @@ func (h *todoHandler) handleCreate(c echo.Context) error {
 func (h *todoHandler) handleList(c echo.Context) error {
 	items, err := h.storage.TodoService().List(h.user(c).Email)
 	if err != nil && err == storage.ErrNotAuthenticated {
-		return echo.NewHTTPError(http.StatusForbidden, err)
+		return echo.NewHTTPError(http.StatusForbidden, err.Error())
 	}
 	return c.JSON(http.StatusOK, items)
 }
@@ -107,9 +107,9 @@ func (h *todoHandler) handleGet(c echo.Context) error {
 	if err != nil {
 		switch err {
 		case storage.ErrNotFound:
-			return echo.NewHTTPError(http.StatusNotFound)
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		case storage.ErrNotAuthenticated:
-			return echo.NewHTTPError(http.StatusForbidden, err)
+			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		}
 		return err
 	}
@@ -153,7 +153,7 @@ func (h *todoHandler) handleUpdate(c echo.Context) error {
 		case storage.ErrNotFound:
 			return echo.NewHTTPError(http.StatusNotFound)
 		case storage.ErrNotAuthenticated:
-			return echo.NewHTTPError(http.StatusForbidden, err)
+			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		}
 
 		return err
@@ -183,7 +183,7 @@ func (h *todoHandler) handleDelete(c echo.Context) error {
 		case storage.ErrNotFound:
 			return echo.NewHTTPError(http.StatusNotFound)
 		case storage.ErrNotAuthenticated:
-			return echo.NewHTTPError(http.StatusForbidden, err)
+			return echo.NewHTTPError(http.StatusForbidden, err.Error())
 		}
 		return err
 	}

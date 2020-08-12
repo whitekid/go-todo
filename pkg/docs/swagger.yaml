@@ -23,6 +23,9 @@ definitions:
       title:
         example: do something in future
         type: string
+    required:
+    - id
+    - title
     type: object
 info:
   contact: {}

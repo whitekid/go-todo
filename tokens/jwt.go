@@ -19,6 +19,7 @@ type (
 )
 
 // New create new jwt token using HMAC
+// duration jwt token expiration time from now
 func New(issuer string, duration time.Duration) (string, error) {
 	claims := &jwt.StandardClaims{
 		ExpiresAt: time.Now().Add(duration).Unix(),
@@ -56,4 +57,14 @@ func Parse(s string) (string, error) {
 	}
 
 	return claims.Issuer, nil
+}
+
+// IsExpired return true if err is expired error
+func IsExpired(err error) bool {
+	if e, ok := err.(*jwt.ValidationError); ok {
+		return e.Errors == jwt.ValidationErrorExpired
+	}
+
+	return false
+
 }

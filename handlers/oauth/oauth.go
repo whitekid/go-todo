@@ -105,14 +105,14 @@ func (g *googleOAuthHandler) handleCallback(c echo.Context) error {
 	// convert code to token
 	token, err := g.oauthConf.Exchange(oauth2.NoContext, c.QueryParam("code"))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	// request access token
 	client := g.oauthConf.Client(oauth2.NoContext, token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	var user struct {
@@ -121,25 +121,25 @@ func (g *googleOAuthHandler) handleCallback(c echo.Context) error {
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	refreshToken, err := tokens.New(user.Email, config.RefreshTokenDuration())
 	if err != nil {
 		log.Errorf("fail to generate refresh token: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	err = g.storage.TokenService().Create(user.Email, refreshToken)
 	if err != nil {
 		log.Errorf("fail to create refresh token: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	accessToken, err := tokens.New(user.Email, config.AccessTokenDuration())
 	if err != nil {
 		log.Errorf("fail to generate access token: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{

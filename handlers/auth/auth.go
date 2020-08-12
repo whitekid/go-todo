@@ -37,13 +37,13 @@ func (h *authHandler) Route(r Router) {
 // @security ApiKeyAuth
 func (h *authHandler) handleTokenRefresh(c echo.Context) error {
 	email := c.Get("user").(*storage.User).Email
-	token, err := tokens.New(email, config.RefreshTokenDuration())
+	token, err := tokens.New(email, config.AccessTokenDuration())
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	if err := h.storage.TokenService().Create(email, token); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	c.Response().Header().Set(echo.HeaderAuthorization, token)

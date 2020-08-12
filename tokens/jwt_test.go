@@ -45,6 +45,13 @@ func TestToken(t *testing.T) {
 	}
 }
 
+func TestExpired(t *testing.T) {
+	token, err := New("hello", -time.Minute)
+	require.NoError(t, err)
+	_, err = Parse(token)
+	require.True(t, expired(err))
+}
+
 func TestJWT(t *testing.T) {
 	type args struct {
 		signKey  []byte

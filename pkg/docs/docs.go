@@ -313,6 +313,10 @@ var doc = `{
         },
         "types.TodoItem": {
             "type": "object",
+            "required": [
+                "id",
+                "title"
+            ],
             "properties": {
                 "due_date": {
                     "type": "string",
