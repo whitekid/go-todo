@@ -8,6 +8,7 @@ import (
 )
 
 // Interface represents client interface
+//go:generate mockgen -destination=mocks/mocks.go -package mocks . Interface
 type Interface interface {
 	TodoService() TodoService
 }

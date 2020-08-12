@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-playground/validator/v10 v10.3.0
 	github.com/golang/mock v1.4.4
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/sessions v1.2.0

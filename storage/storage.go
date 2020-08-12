@@ -1,6 +1,6 @@
 package storage
 
-//go:generate mockgen -destination=mocks/mocks.go . Interface
+//go:generate mockgen -destination=mocks/mocks.go -package mocks . Interface
 
 import (
 	"github.com/pkg/errors"

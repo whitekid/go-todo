@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )
 
@@ -56,13 +57,13 @@ type TodoService interface {
 
 // User user informations
 type User struct {
-	Email string `json:"email"`
+	Email string `json:"email" validate:"required,email"`
 }
 
 // TodoItem todo item
 type TodoItem struct {
-	ID      string `json:"id" format:"uuid" example:"628b92ab-6d95-4fbe-b7c6-09cf5cd8941c"`
-	Title   string `json:"title" example:"do something in future"`
+	ID      string `json:"id" format:"uuid" example:"628b92ab-6d95-4fbe-b7c6-09cf5cd8941c" validate:"required,uuid"`
+	Title   string `json:"title" example:"do something in future" validate:"required"`
 	DueDate Date   `json:"due_date" swaggertype:"string" example:"2006-01-02"`
 	Rank    int    `json:"rank" format:"int" example:"1"` // rank order
 }
@@ -103,9 +104,5 @@ func (d *Date) MarshalJSON() ([]byte, error) {
 
 // Validate validate items for save
 func (i *TodoItem) Validate() error {
-	if i.Title == "" {
-		return errors.New("title required")
-	}
-
-	return nil
+	return validator.New().Struct(i)
 }

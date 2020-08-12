@@ -15,7 +15,7 @@ import (
 func TestAuth(t *testing.T) {
 	e := echo.New()
 
-	storage, err := storage.New("testdb") // TODO mock storage object
+	storage, err := storage.New("testdb")
 	require.NoError(t, err)
 	defer storage.Close()
 	handler := New(storage)
