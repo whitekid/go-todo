@@ -5,7 +5,7 @@ SRC=$(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -path "*_te
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
 GIT_SHA ?= $(shell git rev-parse --short HEAD)
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
-GIT_TAG ?= $(shell git describe --tags)
+GIT_TAG ?= $(shell git describe --tags --always)
 GIT_DIRTY ?= $(shell test -n "`git status --porcelain`" && echo "dirty" || echo "clean")
 VER_BUILD_TIME ?= $(shell date +%Y-%m-%dT%H:%M:%S%z)
 

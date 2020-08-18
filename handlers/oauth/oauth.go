@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/whitekid/go-todo/config"
-	. "github.com/whitekid/go-todo/handlers/types"
+	"github.com/whitekid/go-todo/httphandler"
 	"github.com/whitekid/go-todo/storage"
 	"github.com/whitekid/go-todo/tokens"
 	. "github.com/whitekid/go-todo/types"
@@ -29,7 +29,7 @@ type Options struct {
 }
 
 // New return google oauth handler
-func New(storage storage.Interface, opts Options) Handler {
+func New(storage storage.Interface, opts Options) httphandler.Interface {
 	return &googleOAuthHandler{
 		storage: storage,
 		oauthConf: &oauth2.Config{
@@ -53,7 +53,7 @@ type googleOAuthHandler struct {
 	path string
 }
 
-func (g *googleOAuthHandler) Route(r Router) {
+func (g *googleOAuthHandler) Route(r httphandler.Router) {
 	r.Use(
 		session.Middleware(sessions.NewCookieStore([]byte("todo"))),
 		func(next echo.HandlerFunc) echo.HandlerFunc {

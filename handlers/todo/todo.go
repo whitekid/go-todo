@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	. "github.com/whitekid/go-todo/handlers/types"
+	"github.com/whitekid/go-todo/httphandler"
 	"github.com/whitekid/go-todo/models"
 	"github.com/whitekid/go-todo/storage"
 	"github.com/whitekid/go-todo/tokens"
@@ -14,7 +14,7 @@ import (
 )
 
 // New create todo handler
-func New(storage storage.Interface) Handler {
+func New(storage storage.Interface) httphandler.Interface {
 	return &todoHandler{
 		storage: storage,
 	}
@@ -24,7 +24,7 @@ type todoHandler struct {
 	storage storage.Interface
 }
 
-func (h *todoHandler) Route(r Router) {
+func (h *todoHandler) Route(r httphandler.Router) {
 	r.Use(tokens.TokenMiddleware(h.storage, false))
 
 	r.POST("/", h.handleCreate)

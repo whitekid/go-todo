@@ -1,6 +1,6 @@
 module github.com/whitekid/go-todo
 
-go 1.14
+go 1.15
 
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
@@ -19,6 +19,6 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/swaggo/echo-swagger v1.0.0
 	github.com/swaggo/swag v1.6.7
-	github.com/whitekid/go-utils v0.0.0-20200811062425-1e437d5b9275
+	github.com/whitekid/go-utils v0.0.0-20200817070241-7aad950f3adc
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )

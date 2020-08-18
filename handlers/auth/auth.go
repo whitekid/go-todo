@@ -5,13 +5,13 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/whitekid/go-todo/config"
-	. "github.com/whitekid/go-todo/handlers/types"
+	"github.com/whitekid/go-todo/httphandler"
 	"github.com/whitekid/go-todo/storage"
 	"github.com/whitekid/go-todo/tokens"
 )
 
 // New create new auth handler
-func New(storage storage.Interface) Handler {
+func New(storage storage.Interface) httphandler.Interface {
 	return &authHandler{
 		storage: storage,
 	}
@@ -21,7 +21,7 @@ type authHandler struct {
 	storage storage.Interface
 }
 
-func (h *authHandler) Route(r Router) {
+func (h *authHandler) Route(r httphandler.Router) {
 	r.PUT("/tokens", h.handleTokenRefresh, tokens.TokenMiddleware(h.storage, true))
 }
 
