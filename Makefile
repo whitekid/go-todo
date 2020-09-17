@@ -32,12 +32,13 @@ clean:
 	rm -f ${TARGET}
 
 test:
-	go test
+	go test -v ./...
 
 # update modules & tidy
 dep:
 	rm -f go.mod go.sum
 	go mod init ${GO_PKG_NAME}
+	go mod edit --replace github.com/dgraph-io/badger/v2=github.com/dgraph-io/badger/v2@v2.0.3
 	@$(MAKE) tidy
 
 tidy:

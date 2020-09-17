@@ -16,7 +16,6 @@ import (
 
 func TestRefresh(t *testing.T) {
 	refreshToken, _ := tokens.New("hello", time.Minute)
-	accessToken, _ := tokens.New("hello", -time.Second)
 
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
@@ -38,7 +37,7 @@ func TestRefresh(t *testing.T) {
 	ts := httptest.NewServer(e)
 	defer ts.Close()
 
-	client := New(ts.URL, refreshToken, accessToken)
+	client := New(ts.URL, refreshToken)
 	_, err := client.TodoService().List()
 	require.NoError(t, err, "expired token shout be refreshed")
 }

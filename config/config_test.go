@@ -21,7 +21,7 @@ func TestDefault(t *testing.T) {
 		}
 	}
 
-	InitDefaults()
+	initDefaults()
 
 	type args struct {
 		key      string
